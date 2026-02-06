@@ -111,7 +111,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-4xl font-bold lightning-glow">⚡ Command Center</h1>
-        <p className="text-muted-foreground">PERUN THUNDER Production Suite Dashboard</p>
+        <p className="text-muted-foreground">PERUNZ THUNDER Production Suite Dashboard</p>
       </div>
 
       {/* KPI Grid */}

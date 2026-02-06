@@ -37,8 +37,8 @@ export function AppSidebar() {
             <Zap className="h-6 w-6 text-primary-foreground" />
           </div>
           {!collapsed && (
-            <div className="flex flex-col">
-              <span className="text-lg font-bold lightning-glow text-foreground">PERUN</span>
+          <div className="flex flex-col">
+              <span className="text-lg font-bold lightning-glow text-foreground">PERUNZ</span>
               <span className="text-xs text-muted-foreground">THUNDER Suite</span>
             </div>
           )}
