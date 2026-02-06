@@ -35,7 +35,7 @@ export default function Login() {
         if (error) {
           toast.error(error.message);
         } else {
-          toast.success(isDilexit ? 'Welcome back, Spider! 🕷️' : 'Welcome back, Producer! ⚡');
+          toast.success(isDilexit ? 'Welcome back, Spider! 🕷️' : 'Welcome back, Bolt Owner! ⚡');
           navigate('/');
         }
       } else {
