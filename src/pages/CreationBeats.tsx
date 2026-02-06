@@ -164,7 +164,7 @@ export default function CreationBeats() {
               Add Beat
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto pb-4">
             <DialogHeader>
               <DialogTitle>{editingBeat ? 'Edit Beat' : 'Add New Beat'}</DialogTitle>
             </DialogHeader>
