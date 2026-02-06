@@ -3,7 +3,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
+import Login from "./pages/Login";
+import AccessDenied from "./pages/AccessDenied";
 import Dashboard from "./pages/Dashboard";
 import CreationBeats from "./pages/CreationBeats";
 import CreationLoops from "./pages/CreationLoops";
@@ -21,18 +25,87 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AppLayout>
+        <AuthProvider>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/beats" element={<CreationBeats />} />
-            <Route path="/loops" element={<CreationLoops />} />
-            <Route path="/score-beats" element={<ScoreBeats />} />
-            <Route path="/score-loops" element={<ScoreLoops />} />
-            <Route path="/planning" element={<WeeklyPlanning />} />
-            <Route path="/analytics" element={<AnalyticsHub />} />
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/access-denied" element={<AccessDenied />} />
+            
+            {/* Protected routes */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Dashboard />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/beats"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <CreationBeats />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/loops"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <CreationLoops />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/score-beats"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <ScoreBeats />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/score-loops"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <ScoreLoops />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/planning"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <WeeklyPlanning />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/analytics"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <AnalyticsHub />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </AppLayout>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
