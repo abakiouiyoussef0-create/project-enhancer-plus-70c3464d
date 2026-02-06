@@ -1,5 +1,6 @@
-import { Zap, Music, RefreshCw, Target, Calendar, BarChart3 } from 'lucide-react';
+import { Zap, Music, RefreshCw, Target, Calendar, BarChart3, LogOut } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Sidebar,
   SidebarContent,
@@ -7,12 +8,14 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
+  SidebarFooter,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 const menuItems = [
   { title: 'Dashboard', url: '/', icon: Zap },
@@ -27,7 +30,12 @@ const menuItems = [
 export function AppSidebar() {
   const location = useLocation();
   const { state } = useSidebar();
+  const { user, signOut } = useAuth();
   const collapsed = state === 'collapsed';
+
+  const handleLogout = async () => {
+    await signOut();
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-primary/30">
@@ -37,7 +45,7 @@ export function AppSidebar() {
             <Zap className="h-6 w-6 text-primary-foreground" />
           </div>
           {!collapsed && (
-          <div className="flex flex-col">
+            <div className="flex flex-col">
               <span className="text-lg font-bold lightning-glow text-foreground">PERUNZ</span>
               <span className="text-xs text-muted-foreground">THUNDER Suite</span>
             </div>
@@ -72,6 +80,23 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="border-t border-primary/30 p-4">
+        {!collapsed && user && (
+          <div className="mb-3 px-2">
+            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+          </div>
+        )}
+        <Button
+          variant="ghost"
+          size={collapsed ? 'icon' : 'default'}
+          onClick={handleLogout}
+          className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+        >
+          <LogOut className="h-4 w-4" />
+          {!collapsed && <span>Sign Out</span>}
+        </Button>
+      </SidebarFooter>
     </Sidebar>
   );
 }

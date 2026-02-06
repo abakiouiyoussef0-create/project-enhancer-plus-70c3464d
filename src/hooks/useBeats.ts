@@ -7,9 +7,13 @@ export function useBeats() {
   return useQuery({
     queryKey: ['beats'],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      
       const { data, error } = await supabase
         .from('beats')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -23,9 +27,12 @@ export function useCreateBeat() {
   
   return useMutation({
     mutationFn: async (beat: BeatInsert) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      
       const { data, error } = await supabase
         .from('beats')
-        .insert([beat])
+        .insert([{ ...beat, user_id: user.id }])
         .select()
         .single();
       

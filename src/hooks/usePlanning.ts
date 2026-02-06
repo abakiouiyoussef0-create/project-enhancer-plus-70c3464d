@@ -9,9 +9,13 @@ export function usePlanning() {
   return useQuery({
     queryKey: ['planning'],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      
       const { data, error } = await supabase
         .from('planning')
-        .select('*');
+        .select('*')
+        .eq('user_id', user.id);
       
       if (error) throw error;
       
@@ -28,9 +32,12 @@ export function useCreateTask() {
   
   return useMutation({
     mutationFn: async (task: PlanningInsert) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      
       const { data, error } = await supabase
         .from('planning')
-        .insert([task])
+        .insert([{ ...task, user_id: user.id }])
         .select()
         .single();
       
