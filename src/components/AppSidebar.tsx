@@ -22,6 +22,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
+
+
+
 const menuItems = [
   { title: 'Dashboard', url: '/', icon: Zap },
   { title: 'Creation Beats', url: '/beats', icon: Music },
@@ -92,7 +95,7 @@ export function AppSidebar() {
                 {isDilexit ? 'DILEXIT' : 'PERUNZ'}
               </span>
               <span className="text-xs text-muted-foreground">
-                {isDilexit ? 'HOUSE OF SPIDER' : 'THUNDER Suite'}
+                {isDilexit ? 'HOUSE OF SPIDER': 'GOD OF THUNDER'}
               </span>
             </div>
           )}
