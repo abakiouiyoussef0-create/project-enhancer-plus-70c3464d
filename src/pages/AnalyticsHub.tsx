@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useBeats } from '@/hooks/useBeats';
 import { useLoops } from '@/hooks/useLoops';
 import { usePlanning } from '@/hooks/usePlanning';
@@ -18,7 +19,8 @@ import {
   ScatterChart,
   Scatter,
 } from 'recharts';
-import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO } from 'date-fns';
+import { format, startOfWeek, endOfWeek } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const CHART_COLORS = [
   'hsl(271, 76%, 53%)',   // Primary purple
@@ -34,6 +36,8 @@ export default function AnalyticsHub() {
   const { data: loops = [], isLoading: loopsLoading } = useLoops();
   const { data: planning = [], isLoading: planningLoading } = usePlanning();
 
+  const [timeRange, setTimeRange] = useState<'week' | 'month'>('month');
+
   const isLoading = beatsLoading || loopsLoading || planningLoading;
 
   if (isLoading) {
@@ -45,6 +49,40 @@ export default function AnalyticsHub() {
   }
 
   // === Chart Data Calculations ===
+
+  // Daily / weekly production trend
+  const today = new Date();
+  const startDate =
+    timeRange === 'week'
+      ? startOfWeek(today, { weekStartsOn: 1 })
+      : new Date(today.getFullYear(), today.getMonth(), 1);
+  const endDate =
+    timeRange === 'week'
+      ? endOfWeek(today, { weekStartsOn: 1 })
+      : new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+  const trendData: { label: string; beats: number; loops: number }[] = [];
+  const cursor = new Date(startDate);
+
+  while (cursor <= endDate) {
+    const key = format(cursor, 'yyyy-MM-dd');
+    const label = timeRange === 'week' ? format(cursor, 'EEE') : format(cursor, 'dd');
+
+    const beatsCount = beats.filter(
+      (b) => format(new Date(b.created_at), 'yyyy-MM-dd') === key,
+    ).length;
+    const loopsCount = loops.filter(
+      (l) => format(new Date(l.created_at), 'yyyy-MM-dd') === key,
+    ).length;
+
+    trendData.push({
+      label,
+      beats: beatsCount,
+      loops: loopsCount,
+    });
+
+    cursor.setDate(cursor.getDate() + 1);
+  }
 
   // Status distribution
   const beatStatusData = [
@@ -137,6 +175,54 @@ export default function AnalyticsHub() {
       <div>
         <h1 className="text-3xl font-bold lightning-glow">📊 Analytics Hub</h1>
         <p className="text-muted-foreground">Deep statistics and performance tracking</p>
+      </div>
+
+      {/* Daily / Weekly Production Trend */}
+      <div className="glass-card rounded-xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold">Daily Cooking – Beats & Loops</h3>
+          <Select
+            value={timeRange}
+            onValueChange={(value: 'week' | 'month') => setTimeRange(value)}
+          >
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="week">This Week</SelectItem>
+              <SelectItem value="month">This Month</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <ResponsiveContainer width="100%" height={260}>
+          <LineChart data={trendData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" />
+            <YAxis
+              allowDecimals={false}
+              stroke="hsl(var(--muted-foreground))"
+              tickMargin={8}
+            />
+            <Tooltip />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey="beats"
+              name="Beats"
+              stroke="hsl(271, 76%, 53%)"
+              strokeWidth={2}
+              dot={{ r: 3 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="loops"
+              name="Loops"
+              stroke="hsl(189, 100%, 50%)"
+              strokeWidth={2}
+              dot={{ r: 3 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
 
       {/* Status Distribution Row */}

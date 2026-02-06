@@ -77,6 +77,40 @@
     --glow-secondary: 189 100% 50%;
   }
 
+  /* Dilexit account - Dark Red Theme */
+  .theme-dilexit {
+    /* Keep same dark background, change accent system to deep red */
+    --primary: 0 80% 45%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 30 90% 50%;
+    --secondary-foreground: 0 0% 5%;
+
+    --accent: 0 75% 25%;
+    --accent-foreground: 0 0% 95%;
+
+    --border: 0 50% 25%;
+    --ring: 0 80% 45%;
+
+    --sidebar-primary: 0 80% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 65% 20%;
+    --sidebar-accent-foreground: 0 0% 92%;
+    --sidebar-border: 0 45% 20%;
+    --sidebar-ring: 0 80% 45%;
+
+    /* Chart & glow accents skewed to red/gold */
+    --chart-1: 0 80% 45%;
+    --chart-2: 30 90% 50%;
+    --chart-3: 120 100% 45%;
+    --chart-4: 210 90% 55%;
+    --chart-5: 330 80% 60%;
+    --chart-6: 50 95% 55%;
+
+    --glow-primary: 0 80% 45%;
+    --glow-secondary: 30 90% 50%;
+  }
+
   .dark {
     /* Same as root - app is dark by default */
     --background: 0 0% 5%;

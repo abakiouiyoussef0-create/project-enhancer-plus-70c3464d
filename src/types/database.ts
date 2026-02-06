@@ -21,6 +21,11 @@ export type Database = {
           quality_score: number | null
           notes: string | null
           is_placed: boolean
+          music_key: string | null
+          mix_rating: number | null
+          arrangement_rating: number | null
+          dope_rating: number | null
+          instruments_used: number | null
         }
         Insert: {
           id?: string
@@ -33,6 +38,11 @@ export type Database = {
           quality_score?: number | null
           notes?: string | null
           is_placed?: boolean
+          music_key?: string | null
+          mix_rating?: number | null
+          arrangement_rating?: number | null
+          dope_rating?: number | null
+          instruments_used?: number | null
         }
         Update: {
           id?: string
@@ -45,6 +55,11 @@ export type Database = {
           quality_score?: number | null
           notes?: string | null
           is_placed?: boolean
+          music_key?: string | null
+          mix_rating?: number | null
+          arrangement_rating?: number | null
+          dope_rating?: number | null
+          instruments_used?: number | null
         }
       }
       loops: {
@@ -60,6 +75,11 @@ export type Database = {
           quality_score: number | null
           notes: string | null
           is_placed: boolean
+          music_key: string | null
+          mix_rating: number | null
+          arrangement_rating: number | null
+          dope_rating: number | null
+          instruments_used: number | null
         }
         Insert: {
           id?: string
@@ -73,6 +93,11 @@ export type Database = {
           quality_score?: number | null
           notes?: string | null
           is_placed?: boolean
+          music_key?: string | null
+          mix_rating?: number | null
+          arrangement_rating?: number | null
+          dope_rating?: number | null
+          instruments_used?: number | null
         }
         Update: {
           id?: string
@@ -86,6 +111,11 @@ export type Database = {
           quality_score?: number | null
           notes?: string | null
           is_placed?: boolean
+          music_key?: string | null
+          mix_rating?: number | null
+          arrangement_rating?: number | null
+          dope_rating?: number | null
+          instruments_used?: number | null
         }
       }
       planning: {

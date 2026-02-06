@@ -1,8 +1,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-const ALLOWED_EMAIL = 'perun.beats@gmail.com';
+const ALLOWED_EMAILS = ['perun.beats@gmail.com', 'dilexit.wav@gmail.com'];
 
 interface AuthContextType {
   user: User | null;
@@ -11,6 +11,7 @@ interface AuthContextType {
   isAllowedUser: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null; needsVerification: boolean }>;
+  updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -21,7 +22,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const isAllowedUser = user?.email === ALLOWED_EMAIL;
+  const isAllowedUser =
+    !!user?.email &&
+    ALLOWED_EMAILS.some((allowed) => allowed.toLowerCase() === user.email!.toLowerCase());
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -44,8 +47,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    // Check if email is allowed
-    if (email.toLowerCase() !== ALLOWED_EMAIL.toLowerCase()) {
+    const isAllowed = ALLOWED_EMAILS.some(
+      (allowed) => allowed.toLowerCase() === email.toLowerCase(),
+    );
+    if (!isAllowed) {
       return { error: new Error('Access denied. This email is not authorized.') };
     }
 
@@ -58,9 +63,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string) => {
-    // Check if email is allowed
-    if (email.toLowerCase() !== ALLOWED_EMAIL.toLowerCase()) {
-      return { error: new Error('Access denied. Only authorized emails can register.'), needsVerification: false };
+    const isAllowed = ALLOWED_EMAILS.some(
+      (allowed) => allowed.toLowerCase() === email.toLowerCase(),
+    );
+    if (!isAllowed) {
+      return {
+        error: new Error('Access denied. Only authorized emails can register.'),
+        needsVerification: false,
+      };
     }
 
     const { error } = await supabase.auth.signUp({
@@ -78,6 +88,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null, needsVerification: true };
   };
 
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    return { error };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -93,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAllowedUser,
         signIn,
         signUp,
+        updatePassword,
         signOut,
       }}
     >

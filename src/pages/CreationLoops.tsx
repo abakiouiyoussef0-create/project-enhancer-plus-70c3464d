@@ -11,10 +11,21 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Slider } from '@/components/ui/slider';
 import { format } from 'date-fns';
 
 const STATUS_OPTIONS: Status[] = ['In Progress', 'Finished', 'Ready to Send'];
 const SOURCE_OPTIONS: Source[] = ['Original', 'Sampled'];
+
+const KEY_OPTIONS = [
+  'C', 'Cm', 'C#', 'C#m',
+  'D', 'Dm', 'D#', 'D#m',
+  'E', 'Em',
+  'F', 'Fm', 'F#', 'F#m',
+  'G', 'Gm', 'G#', 'G#m',
+  'A', 'Am', 'A#', 'A#m',
+  'B', 'Bm',
+];
 
 export default function CreationLoops() {
   const { data: loops = [], isLoading } = useLoops();
@@ -31,9 +42,13 @@ export default function CreationLoops() {
     source: undefined,
     royalty_status: undefined,
     status: 'In Progress',
-    quality_score: undefined,
     notes: '',
     is_placed: false,
+    music_key: '',
+    mix_rating: 5,
+    arrangement_rating: 5,
+    dope_rating: 5,
+    instruments_used: undefined,
   });
 
   const resetForm = () => {
@@ -44,9 +59,13 @@ export default function CreationLoops() {
       source: undefined,
       royalty_status: undefined,
       status: 'In Progress',
-      quality_score: undefined,
       notes: '',
       is_placed: false,
+      music_key: '',
+      mix_rating: 5,
+      arrangement_rating: 5,
+      dope_rating: 5,
+      instruments_used: undefined,
     });
     setEditingLoop(null);
   };
@@ -61,9 +80,13 @@ export default function CreationLoops() {
         source: loop.source || undefined,
         royalty_status: loop.royalty_status || undefined,
         status: loop.status,
-        quality_score: loop.quality_score || undefined,
         notes: loop.notes || '',
         is_placed: loop.is_placed,
+        music_key: loop.music_key || '',
+        mix_rating: loop.mix_rating ?? 5,
+        arrangement_rating: loop.arrangement_rating ?? 5,
+        dope_rating: loop.dope_rating ?? 5,
+        instruments_used: loop.instruments_used || undefined,
       });
     } else {
       resetForm();
@@ -82,13 +105,35 @@ export default function CreationLoops() {
     
     if (!formData.title) return;
 
+    const mix = formData.mix_rating ?? 5;
+    const arrangement = formData.arrangement_rating ?? 5;
+    const dope = formData.dope_rating ?? 5;
+    const quality_score = Number(((mix + arrangement + dope) / 3).toFixed(1));
+
+    const payload: LoopInsert = {
+      title: formData.title,
+      style: formData.style || null,
+      bpm: formData.bpm || null,
+      source: formData.source || null,
+      royalty_status: formData.royalty_status || null,
+      status: formData.status || 'In Progress',
+      notes: formData.notes || null,
+      is_placed: formData.is_placed ?? false,
+      music_key: formData.music_key || null,
+      mix_rating: mix,
+      arrangement_rating: arrangement,
+      dope_rating: dope,
+      instruments_used: formData.instruments_used || null,
+      quality_score,
+    };
+
     if (editingLoop) {
       await updateLoop.mutateAsync({
         id: editingLoop.id,
-        updates: formData,
+        updates: payload,
       });
     } else {
-      await createLoop.mutateAsync(formData as LoopInsert);
+      await createLoop.mutateAsync(payload);
     }
 
     setIsDialogOpen(false);
@@ -176,6 +221,27 @@ export default function CreationLoops() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
+                  <Label htmlFor="music_key">Key</Label>
+                  <Select
+                    value={formData.music_key || ''}
+                    onValueChange={(value) => setFormData({ ...formData, music_key: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select key" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {KEY_OPTIONS.map((key) => (
+                        <SelectItem key={key} value={key}>
+                          {key}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label htmlFor="source">Source</Label>
                   <Select
                     value={formData.source}
@@ -230,16 +296,91 @@ export default function CreationLoops() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="quality_score">Quality Score (1-10)</Label>
+                  <Label>Mix (1-10)</Label>
+                  <div className="flex items-center gap-4">
+                    <Slider
+                      min={1}
+                      max={10}
+                      step={1}
+                      value={[formData.mix_rating ?? 5]}
+                      onValueChange={([value]) =>
+                        setFormData({ ...formData, mix_rating: value })
+                      }
+                    />
+                    <span className="w-8 text-right text-sm">
+                      {formData.mix_rating ?? 5}
+                    </span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Arrangement (1-10)</Label>
+                  <div className="flex items-center gap-4">
+                    <Slider
+                      min={1}
+                      max={10}
+                      step={1}
+                      value={[formData.arrangement_rating ?? 5]}
+                      onValueChange={([value]) =>
+                        setFormData({ ...formData, arrangement_rating: value })
+                      }
+                    />
+                    <span className="w-8 text-right text-sm">
+                      {formData.arrangement_rating ?? 5}
+                    </span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Dope (1-10)</Label>
+                  <div className="flex items-center gap-4">
+                    <Slider
+                      min={1}
+                      max={10}
+                      step={1}
+                      value={[formData.dope_rating ?? 5]}
+                      onValueChange={([value]) =>
+                        setFormData({ ...formData, dope_rating: value })
+                      }
+                    />
+                    <span className="w-8 text-right text-sm">
+                      {formData.dope_rating ?? 5}
+                    </span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="instruments_used">
+                    Melodies Used (optional, 1-50)
+                  </Label>
                   <Input
-                    id="quality_score"
+                    id="instruments_used"
                     type="number"
                     min={1}
-                    max={10}
-                    value={formData.quality_score || ''}
-                    onChange={(e) => setFormData({ ...formData, quality_score: parseInt(e.target.value) || undefined })}
+                    max={50}
+                    value={formData.instruments_used ?? ''}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        instruments_used:
+                          e.target.value === ''
+                            ? undefined
+                            : Math.min(50, Math.max(1, parseInt(e.target.value) || 1)),
+                      })
+                    }
                   />
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Final Score (avg):{' '}
+                  {Number(
+                    (
+                      ((formData.mix_rating ?? 5) +
+                        (formData.arrangement_rating ?? 5) +
+                        (formData.dope_rating ?? 5)) /
+                      3
+                    ).toFixed(1),
+                  )}
                 </div>
               </div>
 
@@ -278,6 +419,7 @@ export default function CreationLoops() {
               <TableHead className="text-primary-foreground font-bold">Loop Name</TableHead>
               <TableHead className="text-primary-foreground font-bold">Style</TableHead>
               <TableHead className="text-primary-foreground font-bold">BPM</TableHead>
+              <TableHead className="text-primary-foreground font-bold">Key</TableHead>
               <TableHead className="text-primary-foreground font-bold">Source</TableHead>
               <TableHead className="text-primary-foreground font-bold">Royalties</TableHead>
               <TableHead className="text-primary-foreground font-bold">Status</TableHead>
@@ -296,6 +438,7 @@ export default function CreationLoops() {
                 <TableCell className="font-medium">{loop.title}</TableCell>
                 <TableCell>{loop.style || '-'}</TableCell>
                 <TableCell>{loop.bpm || '-'}</TableCell>
+                <TableCell>{loop.music_key || '-'}</TableCell>
                 <TableCell>{loop.source || '-'}</TableCell>
                 <TableCell>
                   <span className={getDisplayRoyalty(loop) === 'Free' ? 'text-green-500 font-bold' : 'text-red-500 font-bold'}>

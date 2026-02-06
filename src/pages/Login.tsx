@@ -17,6 +17,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const isDilexit = email.trim().toLowerCase() === 'dilexit.wav@gmail.com';
+
   // If already logged in and allowed, redirect
   if (user && isAllowedUser) {
     navigate('/');
@@ -33,7 +35,7 @@ export default function Login() {
         if (error) {
           toast.error(error.message);
         } else {
-          toast.success('Welcome back, Producer! ⚡');
+          toast.success(isDilexit ? 'Welcome back, Spider! 🕷️' : 'Welcome back, Producer! ⚡');
           navigate('/');
         }
       } else {
@@ -63,7 +65,11 @@ export default function Login() {
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-secondary mb-4 animate-pulse-glow">
-              <Zap className="h-10 w-10 text-white" />
+              {isDilexit ? (
+                <span className="text-4xl leading-none text-white">🕷️</span>
+              ) : (
+                <Zap className="h-10 w-10 text-white" />
+              )}
             </div>
             <h1 className="text-3xl font-bold lightning-glow">PERUNZ</h1>
             <p className="text-muted-foreground mt-1">THUNDER Production Suite</p>
@@ -117,10 +123,14 @@ export default function Login() {
               disabled={isLoading}
             >
               {isLoading ? (
-                <span className="animate-spin">⚡</span>
+                <span className="animate-spin">{isDilexit ? '🕷️' : '⚡'}</span>
               ) : (
                 <>
-                  <Zap className="mr-2 h-4 w-4" />
+                  {isDilexit ? (
+                    <span className="mr-2">🕷️</span>
+                  ) : (
+                    <Zap className="mr-2 h-4 w-4" />
+                  )}
                   {isLogin ? 'Sign In' : 'Create Account'}
                 </>
               )}

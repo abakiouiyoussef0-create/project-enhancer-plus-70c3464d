@@ -1,5 +1,6 @@
-import { Zap, Music, RefreshCw, Target, Calendar, BarChart3, LogOut } from 'lucide-react';
+import { Zap, Music, RefreshCw, Target, Calendar, BarChart3, LogOut, KeyRound } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import {
   Sidebar,
@@ -16,6 +17,10 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 
 const menuItems = [
   { title: 'Dashboard', url: '/', icon: Zap },
@@ -30,11 +35,44 @@ const menuItems = [
 export function AppSidebar() {
   const location = useLocation();
   const { state } = useSidebar();
-  const { user, signOut } = useAuth();
+  const { user, signOut, updatePassword } = useAuth();
   const collapsed = state === 'collapsed';
+  const isDilexit = user?.email?.toLowerCase() === 'dilexit.wav@gmail.com';
+
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   const handleLogout = async () => {
     await signOut();
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword || newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match.');
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      const { error } = await updatePassword(newPassword);
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success('Password updated successfully.');
+        setIsPasswordDialogOpen(false);
+        setNewPassword('');
+        setConfirmPassword('');
+      }
+    } finally {
+      setIsUpdatingPassword(false);
+    }
   };
 
   return (
@@ -42,12 +80,20 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-primary/30 p-4">
         <div className="flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-            <Zap className="h-6 w-6 text-primary-foreground" />
+            {isDilexit ? (
+              <span className="text-xl leading-none text-primary-foreground">🕷️</span>
+            ) : (
+              <Zap className="h-6 w-6 text-primary-foreground" />
+            )}
           </div>
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="text-lg font-bold lightning-glow text-foreground">PERUNZ</span>
-              <span className="text-xs text-muted-foreground">THUNDER Suite</span>
+              <span className="text-lg font-bold lightning-glow text-foreground">
+                {isDilexit ? 'DILEXIT' : 'PERUNZ'}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {isDilexit ? 'HOUSE OF SPIDER' : 'THUNDER Suite'}
+              </span>
             </div>
           )}
         </div>
@@ -83,15 +129,63 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-primary/30 p-4">
         {!collapsed && user && (
-          <div className="mb-3 px-2">
+          <div className="mb-3 px-2 space-y-2">
             <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start gap-2 text-xs"
+                >
+                  <KeyRound className="h-3 w-3" />
+                  Change Password
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-sm">
+                <DialogHeader>
+                  <DialogTitle>Change Password</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleChangePassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="new-password">New Password</Label>
+                    <Input
+                      id="new-password"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      minLength={6}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-password">Confirm Password</Label>
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      minLength={6}
+                      required
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isUpdatingPassword}
+                  >
+                    {isUpdatingPassword ? 'Updating...' : 'Update Password'}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
         )}
         <Button
           variant="ghost"
           size={collapsed ? 'icon' : 'default'}
           onClick={handleLogout}
-          className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 mt-2"
         >
           <LogOut className="h-4 w-4" />
           {!collapsed && <span>Sign Out</span>}
