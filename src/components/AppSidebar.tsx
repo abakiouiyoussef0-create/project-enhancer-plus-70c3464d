@@ -95,7 +95,7 @@ export function AppSidebar() {
                 {isDilexit ? 'DILEXIT' : 'PERUNZ'}
               </span>
               <span className="text-xs text-muted-foreground">
-                {isDilexit ? 'HOUSE OF SPIDER': 'GOD OF THUNDER'}
+                {isDilexit ? 'Yoooo its Dilexit Men': 'GOD OF THUNDER'}
               </span>
             </div>
           )}
