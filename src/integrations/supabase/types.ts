@@ -14,7 +14,117 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      beats: {
+        Row: {
+          bpm: number | null
+          created_at: string
+          id: string
+          is_placed: boolean | null
+          mood: string | null
+          notes: string | null
+          quality_score: number | null
+          status: string | null
+          style: string | null
+          title: string
+        }
+        Insert: {
+          bpm?: number | null
+          created_at?: string
+          id?: string
+          is_placed?: boolean | null
+          mood?: string | null
+          notes?: string | null
+          quality_score?: number | null
+          status?: string | null
+          style?: string | null
+          title: string
+        }
+        Update: {
+          bpm?: number | null
+          created_at?: string
+          id?: string
+          is_placed?: boolean | null
+          mood?: string | null
+          notes?: string | null
+          quality_score?: number | null
+          status?: string | null
+          style?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      loops: {
+        Row: {
+          bpm: number | null
+          created_at: string
+          id: string
+          is_placed: boolean | null
+          notes: string | null
+          quality_score: number | null
+          royalty_status: string | null
+          source: string | null
+          status: string | null
+          style: string | null
+          title: string
+        }
+        Insert: {
+          bpm?: number | null
+          created_at?: string
+          id?: string
+          is_placed?: boolean | null
+          notes?: string | null
+          quality_score?: number | null
+          royalty_status?: string | null
+          source?: string | null
+          status?: string | null
+          style?: string | null
+          title: string
+        }
+        Update: {
+          bpm?: number | null
+          created_at?: string
+          id?: string
+          is_placed?: boolean | null
+          notes?: string | null
+          quality_score?: number | null
+          royalty_status?: string | null
+          source?: string | null
+          status?: string | null
+          style?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      planning: {
+        Row: {
+          day: string
+          focus: string | null
+          id: string
+          is_completed: boolean | null
+          planned_time: number | null
+          style_focus: string | null
+          task_name: string
+        }
+        Insert: {
+          day: string
+          focus?: string | null
+          id?: string
+          is_completed?: boolean | null
+          planned_time?: number | null
+          style_focus?: string | null
+          task_name: string
+        }
+        Update: {
+          day?: string
+          focus?: string | null
+          id?: string
+          is_completed?: boolean | null
+          planned_time?: number | null
+          style_focus?: string | null
+          task_name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
