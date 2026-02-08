@@ -1,4 +1,4 @@
-import { Zap, Music, RefreshCw, Target, Calendar, BarChart3, LogOut, KeyRound } from 'lucide-react';
+import { Zap, Music, RefreshCw, Target, Calendar, BarChart3, LogOut, KeyRound, Wand2 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -31,6 +31,7 @@ const menuItems = [
   { title: 'Creation Loops', url: '/loops', icon: RefreshCw },
   { title: 'Score Beats', url: '/score-beats', icon: Target },
   { title: 'Score Loops', url: '/score-loops', icon: Target },
+  { title: 'AI Melody Generator', url: '/melody-generator', icon: Wand2 },
   { title: 'Weekly Planning', url: '/planning', icon: Calendar },
   { title: 'Analytics Hub', url: '/analytics', icon: BarChart3 },
 ];
@@ -95,7 +96,7 @@ export function AppSidebar() {
                 {isDilexit ? 'DILEXIT' : 'PERUNZ'}
               </span>
               <span className="text-xs text-muted-foreground">
-                {isDilexit ? 'Yoooo its Dilexit Men!': 'GOD OF THUNDER'}
+                {isDilexit ? 'Yoooo its Dilexit Men!' : 'GOD OF THUNDER'}
               </span>
             </div>
           )}

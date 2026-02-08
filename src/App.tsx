@@ -13,6 +13,7 @@ import CreationBeats from "./pages/CreationBeats";
 import CreationLoops from "./pages/CreationLoops";
 import ScoreBeats from "./pages/ScoreBeats";
 import ScoreLoops from "./pages/ScoreLoops";
+import MelodyGenerator from "./pages/MelodyGenerator";
 import WeeklyPlanning from "./pages/WeeklyPlanning";
 import AnalyticsHub from "./pages/AnalyticsHub";
 import NotFound from "./pages/NotFound";
@@ -30,7 +31,7 @@ const App = () => (
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/access-denied" element={<AccessDenied />} />
-            
+
             {/* Protected routes */}
             <Route
               path="/"
@@ -83,6 +84,16 @@ const App = () => (
               }
             />
             <Route
+              path="/melody-generator"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <MelodyGenerator />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/planning"
               element={
                 <ProtectedRoute>
@@ -102,7 +113,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
