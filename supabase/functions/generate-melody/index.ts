@@ -13,84 +13,63 @@ serve(async (req) => {
     }
 
     try {
-        const { prompt, melody, duration, model_version } = await req.json()
+        const { prompt, duration } = await req.json()
 
-        // Default to a popular MusicGen model (MusicGen Melody)
-        // specific version hash for: facebookresearch/musicgen:7a76a8258b23fae65c5a22debb8841dcc7aa2fb7986431d21b650b771b90c6ac
-        // This is "melody" version. 
-        // "large" version: 671ac645ce5e552cc63a54a2bb95b55d6595799fa6c7fb442f9e548231c3606c
-        const version = model_version || "7a76a8258b23fae65c5a22debb8841dcc7aa2fb7986431d21b650b771b90c6ac";
+        // Hugging Face Inference API URL for MusicGen Melody
+        const API_URL = "https://api-inference.huggingface.co/models/facebook/musicgen-melody";
+        const API_TOKEN = Deno.env.get("HUGGING_FACE_ACCESS_TOKEN");
 
-        const input = {
-            prompt: prompt,
-            model_version: "melody",
-            duration: duration || 15,
-            continue: 0 // generated audio does not continue the melody but uses it as detailed conditioning
-        };
-
-        if (melody) {
-            input.melody = melody;
+        if (!API_TOKEN) {
+            throw new Error("Missing HUGGING_FACE_ACCESS_TOKEN secret.");
         }
 
-        // Call Replicate API to create a prediction
-        const response = await fetch("https://api.replicate.com/v1/predictions", {
-            method: "POST",
+        // Prepare inputs for Hugging Face
+        // Note: The free Inference API primarily supports Text-to-Music for this model.
+        // Complex audio-conditioned input (melody) is often limited or requires specific payload formatting usually reserved for the full pipeline.
+        // We will proceed with Text-based generation which is reliable on the free tier.
+
+        const payload = {
+            inputs: prompt,
+            // parameters: { duration: duration } // HF API parameters vary, often fixed duration on free tier
+        };
+
+        console.log("Calling Hugging Face API with prompt:", prompt);
+
+        const response = await fetch(API_URL, {
             headers: {
-                Authorization: `Token ${Deno.env.get("REPLICATE_API_TOKEN")}`,
+                Authorization: `Bearer ${API_TOKEN}`,
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-                version: version,
-                input: input,
-            }),
+            method: "POST",
+            body: JSON.stringify(payload),
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || "Failed to create prediction");
+            const errorText = await response.text();
+            console.error("HF API Error:", errorText);
+            throw new Error(`Hugging Face API Error: ${response.status} ${response.statusText} - ${errorText}`);
         }
 
-        const prediction = await response.json();
-        let result = prediction;
+        // The response is binary audio data (Blob/Buffer)
+        const audioBuffer = await response.arrayBuffer();
 
-        // Poll for completion
-        // Note: Edge Functions have a timeout (usually 60s for free tier, longer for pro). 
-        // MusicGen 15s might take 30-60s. We'll poll for a bit.
+        // Convert to Base64 to send back to client in JSON
+        const base64Audio = btoa(
+            new Uint8Array(audioBuffer)
+                .reduce((data, byte) => data + String.fromCharCode(byte), '')
+        );
 
-        const maxAttempts = 60; // 60 seconds roughly
-        let attempts = 0;
+        // Determine content type (usually FLAC or WAV from HF)
+        const contentType = response.headers.get("content-type") || "audio/flac";
+        const dataUri = `data:${contentType};base64,${base64Audio}`;
 
-        while (
-            result.status !== "succeeded" &&
-            result.status !== "failed" &&
-            result.status !== "canceled" &&
-            attempts < maxAttempts
-        ) {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            attempts++;
-
-            const pollResponse = await fetch(result.urls.get, {
-                headers: {
-                    Authorization: `Token ${Deno.env.get("REPLICATE_API_TOKEN")}`,
-                    "Content-Type": "application/json",
-                },
-            });
-
-            if (!pollResponse.ok) {
-                // If polling fails, we might just return the ID and let client handle it, but for now throw
-                console.error("Polling failed");
-                break;
-            }
-
-            result = await pollResponse.json();
-        }
-
-        return new Response(JSON.stringify(result), {
+        return new Response(JSON.stringify({ output: dataUri }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,
         })
 
     } catch (error) {
+        console.error("Function Error:", error);
         return new Response(JSON.stringify({ error: error.message }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 400,
