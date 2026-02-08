@@ -295,6 +295,13 @@ export default function MelodyGenerator() {
           </CardContent>
         </Card>
       )}
+
+      {/* Connection Diagnostic */}
+      <div className="mt-12 pt-8 border-t border-primary/10 text-center opacity-30 hover:opacity-100 transition-opacity">
+        <p className="text-xs font-mono text-muted-foreground">
+          Supabase Connection: {import.meta.env.VITE_SUPABASE_URL || "⚠️ NOT CONFIGURED"} | Mode: {import.meta.env.MODE}
+        </p>
+      </div>
     </div>
   );
 }
