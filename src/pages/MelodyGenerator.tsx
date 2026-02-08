@@ -53,18 +53,24 @@ export default function MelodyGenerator() {
 
   const extractMetadataFromFilename = (filename: string) => {
     // Regex for BPM (e.g., 140bpm, 140 bpm, 140)
-    // strict: look for number followed by spacing/bpm, or just a number if clear context
     const bpmMatch = filename.match(/\b(\d{2,3})\s*(?:bpm)?\b/i);
 
-    // Regex for Key (e.g., Cmin, C min, C minor, C#maj, etc.)
-    // Strict: word boundary start -> Note -> opt #/b -> opt m/maj/min -> word boundary end
-    // This prevents matching 'd' from 'devile' or 'l' from 'loop'
-    // Matches: "Cmin", "F#m", "Eb Maj", "A minor", "G"
-    const keyMatch = filename.match(/\b([A-G][#b]?\s*(?:maj|major|min|minor|m)?)\b/i);
+    // Regex for Key - matches musical keys like F#m, Cm, F but NOT random letters in words
+    // Strategy: First try to match keys with modifiers (safer), then standalone letters
+
+    // Priority 1: Keys with #, b, maj, major, min, minor, or m modifiers
+    // Examples: F#m, Bb, C#maj, Dmin, Ebmajor
+    let keyMatch = filename.match(/(?:^|[^a-zA-Z])([A-G][#b](?:maj|major|min|minor|m)?|[A-G](?:maj|major|min|minor|m))(?:[^a-zA-Z]|$)/i);
+
+    // Priority 2: Single letter keys ONLY if surrounded by non-letter characters
+    // Examples: " F " or "-F-" or "_F." but NOT "devile" (d) or "from" (f)
+    if (!keyMatch) {
+      keyMatch = filename.match(/(?:^|[^a-zA-Z])([A-G])(?:[^a-zA-Z]|$)/);
+    }
 
     return {
       bpm: bpmMatch ? bpmMatch[1] : null,
-      key: keyMatch ? keyMatch[1] : null
+      key: keyMatch ? keyMatch[1].trim() : null
     };
   };
 
