@@ -53,16 +53,18 @@ export default function MelodyGenerator() {
 
   const extractMetadataFromFilename = (filename: string) => {
     // Regex for BPM (e.g., 140bpm, 140 bpm, 140)
-    // Looking for 2-3 digit number followed optionally by 'bpm'
-    const bpmMatch = filename.match(/(\d{2,3})\s*(?:bpm)?/i);
+    // strict: look for number followed by spacing/bpm, or just a number if clear context
+    const bpmMatch = filename.match(/\b(\d{2,3})\s*(?:bpm)?\b/i);
 
     // Regex for Key (e.g., Cmin, C min, C minor, C#maj, etc.)
-    // Matches [A-G] followed by optional [#b], then space, then minor/major/min/maj/m
-    const keyMatch = filename.match(/([A-G][#b]?)\s*(?:maj|major|min|minor|m)?/i);
+    // Strict: word boundary start -> Note -> opt #/b -> opt m/maj/min -> word boundary end
+    // This prevents matching 'd' from 'devile' or 'l' from 'loop'
+    // Matches: "Cmin", "F#m", "Eb Maj", "A minor", "G"
+    const keyMatch = filename.match(/\b([A-G][#b]?\s*(?:maj|major|min|minor|m)?)\b/i);
 
     return {
       bpm: bpmMatch ? bpmMatch[1] : null,
-      key: keyMatch ? keyMatch[0] : null // rudimentary key extraction
+      key: keyMatch ? keyMatch[1] : null
     };
   };
 
