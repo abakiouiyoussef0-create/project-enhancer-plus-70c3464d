@@ -10,7 +10,7 @@ VALUES (
 ON CONFLICT (id) DO NOTHING;
 
 -- 2. Add storage policies for the melodies bucket
--- Run this in Supabase SQL Editor for project: lcxrwhdydwhihpuubirl
+-- Run this in Supabase SQL Editor for project: wvpmrsgsgwdiyknepprq
 
 -- Drop policies if they exist to avoid collision errors
 DROP POLICY IF EXISTS "Allow authenticated users to upload melodies" ON storage.objects;

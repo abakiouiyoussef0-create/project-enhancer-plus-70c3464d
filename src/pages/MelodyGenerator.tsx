@@ -99,6 +99,11 @@ export default function MelodyGenerator() {
         .upload(filePath, file);
 
       if (uploadError) {
+        console.error("Upload error details:", uploadError);
+        if (uploadError.message.includes("FILE_ERROR_NO_SPACE") ||
+          JSON.stringify(uploadError).includes("FILE_ERROR_NO_SPACE")) {
+          throw new Error("Browser storage is full. Please clear your browser cache/site data.");
+        }
         throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
