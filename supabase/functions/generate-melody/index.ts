@@ -47,7 +47,11 @@ serve(async (req) => {
         if (!response.ok) {
             const errorText = await response.text();
             console.error("HF API Error:", errorText);
-            throw new Error(`Hugging Face API Error: ${response.status} ${response.statusText} - ${errorText}`);
+            // Throw a JSON object if possible, or plain text
+            throw new Error(JSON.stringify({
+                status: response.status,
+                message: errorText || response.statusText
+            }));
         }
 
         // The response is binary audio data (Blob/Buffer)

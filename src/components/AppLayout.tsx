@@ -1,5 +1,6 @@
 import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
+import { ThunderCursor } from '@/components/ThunderCursor';
 import { useAuth } from '@/hooks/useAuth';
 
 interface AppLayoutProps {
@@ -13,6 +14,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <SidebarProvider defaultOpen={true}>
+      <ThunderCursor theme={isDilexit ? 'spider' : 'thunder'} />
       <div className={`flex min-h-screen w-full ${isDilexit ? 'theme-dilexit' : ''}`}>
         <AppSidebar />
         <SidebarInset className="flex flex-col">
