@@ -10,8 +10,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
+
 export default function VoiceCloner() {
     const [isCloning, setIsCloning] = useState(false);
+    const [cloningStatus, setCloningStatus] = useState<string>("");
     const [pitch, setPitch] = useState(0);
     const [strength, setStrength] = useState(1);
     const [referenceFiles, setReferenceFiles] = useState<File[]>([]);
@@ -44,10 +46,12 @@ export default function VoiceCloner() {
         }
 
         setIsCloning(true);
+        setCloningStatus("Preparing...");
         setClonedAudioUrl(null);
 
         try {
             // 1. Upload Source File to Supabase Storage
+            setCloningStatus("Uploading vocal...");
             const sourcePath = `${crypto.randomUUID()}_${sourceFile.name}`;
             const { error: sourceError } = await supabase.storage
                 .from('vocals')
@@ -56,6 +60,7 @@ export default function VoiceCloner() {
             if (sourceError) throw sourceError;
 
             // 2. Upload Reference File (Only the first one to keep it fast)
+            setCloningStatus("Uploading reference...");
             const refFile = referenceFiles[0];
             const refPath = `${crypto.randomUUID()}_${refFile.name}`;
             const { error: refError } = await supabase.storage
@@ -64,9 +69,11 @@ export default function VoiceCloner() {
 
             if (refError) throw refError;
 
-            // 3. Invoke Edge Function with the PATHS instead of the files
-            const { data, error } = await supabase.functions.invoke('voice-clone', {
+            // 3. Initiate conversion (Action: START)
+            setCloningStatus("AI Processing...");
+            const { data: startData, error: startError } = await supabase.functions.invoke('voice-clone', {
                 body: {
+                    action: "start",
                     sourcePath,
                     refPath,
                     pitch: pitch.toString(),
@@ -74,32 +81,53 @@ export default function VoiceCloner() {
                 },
             });
 
-            if (error) {
-                // Try to get specific error from the function response
-                let errorMsg = error.message;
-                if (error instanceof Error && 'context' in error) {
-                    const context = (error as any).context;
-                    if (context && typeof context === 'object' && 'statusText' in context) {
-                        errorMsg = `${error.message} (${context.statusText})`;
-                    }
+            if (startError) throw startError;
+            if (!startData?.event_id) throw new Error("Failed to start AI process");
+
+            // 4. Polling for result (Action: CHECK)
+            let isComplete = false;
+            let resultUrl = "";
+            let attempts = 0;
+            const maxAttempts = 60; // 2 minutes
+
+            while (!isComplete && attempts < maxAttempts) {
+                setCloningStatus(`Processing... (${Math.round((attempts / maxAttempts) * 100)}%)`);
+
+                const { data: pollData, error: pollError } = await supabase.functions.invoke('voice-clone', {
+                    body: {
+                        action: "check",
+                        eventId: startData.event_id
+                    },
+                });
+
+                if (pollError) throw pollError;
+
+                if (pollData?.status === "complete") {
+                    resultUrl = pollData.result;
+                    isComplete = true;
+                    break;
                 }
-                throw new Error(errorMsg);
+
+                if (pollData?.status === "error") {
+                    throw new Error("AI Processing failed");
+                }
+
+                // Wait 3 seconds between polls
+                await new Promise(r => setTimeout(r, 3000));
+                attempts++;
             }
 
-            if (data && data.result) {
-                setClonedAudioUrl(data.result);
-                toast.success("Voice cloning complete! ⚡");
-            } else if (data && data.error) {
-                throw new Error(data.error);
-            } else {
-                throw new Error("No result received from the AI.");
-            }
+            if (!resultUrl) throw new Error("Conversion timed out");
+
+            setClonedAudioUrl(resultUrl);
+            toast.success("Voice cloning complete! ⚡");
 
         } catch (error) {
             console.error(error);
             toast.error(`Cloning failed: ${error.message || "Please try again."}`);
         } finally {
             setIsCloning(false);
+            setCloningStatus("");
         }
     };
 
@@ -245,11 +273,16 @@ export default function VoiceCloner() {
                                 disabled={isCloning}
                             >
                                 {isCloning ? (
-                                    <RefreshCw className="w-6 h-6 animate-spin mr-2" />
+                                    <div className="flex items-center gap-2">
+                                        <RefreshCw className="w-6 h-6 animate-spin" />
+                                        <span>{cloningStatus}</span>
+                                    </div>
                                 ) : (
-                                    <Zap className="w-6 h-6 mr-2" />
+                                    <div className="flex items-center gap-2">
+                                        <Zap className="w-6 h-6" />
+                                        <span>START VOICE CONVERSION</span>
+                                    </div>
                                 )}
-                                {isCloning ? "CLONING VOCALS..." : "START VOICE CONVERSION"}
                             </Button>
                         </CardContent>
                     </Card>
