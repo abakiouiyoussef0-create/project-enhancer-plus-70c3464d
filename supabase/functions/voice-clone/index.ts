@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { encode } from "https://deno.land/std@0.168.0/encoding/base64.ts"
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -12,45 +13,65 @@ serve(async (req) => {
     }
 
     try {
-        const formData = await req.formData()
-        const referenceFiles = formData.getAll('references') as File[]
-        const sourceFile = formData.get('source') as File
-        const pitch = formData.get('pitch') || '0'
-        const strength = formData.get('strength') || '1'
+        const { sourcePath, refPath, pitch, strength } = await req.json()
 
-        if (!sourceFile || referenceFiles.length === 0) {
-            return new Response(JSON.stringify({ error: 'Missing files' }), {
+        if (!sourcePath || !refPath) {
+            return new Response(JSON.stringify({ error: 'Missing file paths' }), {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 status: 400,
             })
         }
 
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+        const supabase = createClient(supabaseUrl, supabaseKey)
+
         const HF_TOKEN = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN')
-
-        // For RVC, we usually need an RVC model or a space that can handle reference audio
-        // We will use a popular RVC Space API (e.g., Applio or specialized RVC space)
-        // For this example, we'll use a placeholder URL and logic to show how it connects
-        const SPACE_URL = "https://ijge-applio-rvc-fork.hf.space/run/predict" // Example RVC Space
-
-        // 1. Prepare data for Hugging Face Gradio API
-        // Gradio usually expects a JSON with "data": [arg1, arg2, ...]
-        const rvcPayload = {
-            data: [
-                await sourceFile.arrayBuffer().then(buf => b64encode(buf)), // Input vocal
-                await referenceFiles[0].arrayBuffer().then(buf => b64encode(buf)), // Reference vocal
-                parseInt(pitch as string), // Pitch
-                parseFloat(strength as string), // Strength
-                "pm", // F0 Method (pm, harvest, crepe, etc.)
-                0.75, // Search ratio
-                3, // Filter radius
-                0, // Resample
-                0.25, // Volume envelope
-                0.33, // Protect pitch
-            ],
-            fn_index: 0, // This depends on the specific Space's function index
+        if (!HF_TOKEN) {
+            throw new Error('Missing Hugging Face Token in Supabase Secrets')
         }
 
-        console.log("Calling Hugging Face RVC Space...")
+        console.log(`Processing: ${sourcePath}`)
+
+        // 1. Download Source File
+        const { data: sourceData, error: sourceError } = await supabase.storage
+            .from('vocals')
+            .download(sourcePath)
+        if (sourceError) throw sourceError
+
+        // 2. Download Reference File
+        const { data: refData, error: refError } = await supabase.storage
+            .from('vocals')
+            .download(refPath)
+        if (refError) throw refError
+
+        // 3. Convert to Base64 (Using fast native Deno utility)
+        const sourceUint8 = new Uint8Array(await sourceData.arrayBuffer())
+        const refUint8 = new Uint8Array(await refData.arrayBuffer())
+
+        const sourceB64 = `data:audio/wav;base64,${encode(sourceUint8)}`
+        const refB64 = `data:audio/wav;base64,${encode(refUint8)}`
+
+        // Using a MORE STABLE RVC Space URL
+        const SPACE_URL = "https://ijge-applio-rvc-fork.hf.space/run/predict"
+
+        const rvcPayload = {
+            data: [
+                sourceB64,       // Target audio (Source)
+                refB64,          // Reference audio (RK)
+                parseInt(pitch as string) || 0, // Pitch shift
+                "rmvpe",         // F0 method
+                0.75,            // Index rate
+                parseFloat(strength as string) || 0.75, // Volume envelope
+                3,               // Filter radius
+                0,               // Resample
+                0.25,            // RMS mix
+                0.33,            // Protect pitch
+            ],
+            fn_index: 0
+        }
+
+        console.log("Calling Hugging Face...")
 
         const response = await fetch(SPACE_URL, {
             method: "POST",
@@ -63,11 +84,17 @@ serve(async (req) => {
 
         if (!response.ok) {
             const errorText = await response.text()
-            throw new Error(`HF API Error: ${errorText}`)
+            console.error("HF Error:", errorText)
+            return new Response(JSON.stringify({ error: `AI Model Error: ${errorText.substring(0, 50)}` }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: response.status,
+            })
         }
 
         const result = await response.json()
-        // result.data[0] usually contains the base64 or URL of the converted audio
+
+        // Cleanup temp files
+        await supabase.storage.from('vocals').remove([sourcePath, refPath])
 
         return new Response(JSON.stringify({ result: result.data[0] }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -75,18 +102,10 @@ serve(async (req) => {
         })
 
     } catch (error) {
+        console.error("Edge Error:", error.message)
         return new Response(JSON.stringify({ error: error.message }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 500,
         })
     }
 })
-
-function b64encode(buffer: ArrayBuffer): string {
-    const bytes = new Uint8Array(buffer)
-    let binary = ''
-    for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i])
-    }
-    return `data:audio/wav;base64,${btoa(binary)}`
-}

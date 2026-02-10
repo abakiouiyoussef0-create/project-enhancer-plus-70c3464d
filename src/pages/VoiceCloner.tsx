@@ -47,21 +47,50 @@ export default function VoiceCloner() {
         setClonedAudioUrl(null);
 
         try {
-            const formData = new FormData();
-            referenceFiles.forEach(file => formData.append('references', file));
-            formData.append('source', sourceFile);
-            formData.append('pitch', pitch.toString());
-            formData.append('strength', strength.toString());
+            // 1. Upload Source File to Supabase Storage
+            const sourcePath = `${crypto.randomUUID()}_${sourceFile.name}`;
+            const { error: sourceError } = await supabase.storage
+                .from('vocals')
+                .upload(sourcePath, sourceFile);
 
+            if (sourceError) throw sourceError;
+
+            // 2. Upload Reference File (Only the first one to keep it fast)
+            const refFile = referenceFiles[0];
+            const refPath = `${crypto.randomUUID()}_${refFile.name}`;
+            const { error: refError } = await supabase.storage
+                .from('vocals')
+                .upload(refPath, refFile);
+
+            if (refError) throw refError;
+
+            // 3. Invoke Edge Function with the PATHS instead of the files
             const { data, error } = await supabase.functions.invoke('voice-clone', {
-                body: formData,
+                body: {
+                    sourcePath,
+                    refPath,
+                    pitch: pitch.toString(),
+                    strength: strength.toString()
+                },
             });
 
-            if (error) throw error;
+            if (error) {
+                // Try to get specific error from the function response
+                let errorMsg = error.message;
+                if (error instanceof Error && 'context' in error) {
+                    const context = (error as any).context;
+                    if (context && typeof context === 'object' && 'statusText' in context) {
+                        errorMsg = `${error.message} (${context.statusText})`;
+                    }
+                }
+                throw new Error(errorMsg);
+            }
 
             if (data && data.result) {
                 setClonedAudioUrl(data.result);
                 toast.success("Voice cloning complete! ⚡");
+            } else if (data && data.error) {
+                throw new Error(data.error);
             } else {
                 throw new Error("No result received from the AI.");
             }
