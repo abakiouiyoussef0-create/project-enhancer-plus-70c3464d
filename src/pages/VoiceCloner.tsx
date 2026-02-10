@@ -96,7 +96,9 @@ export default function VoiceCloner() {
                 const { data: pollData, error: pollError } = await supabase.functions.invoke('voice-clone', {
                     body: {
                         action: "check",
-                        eventId: startData.event_id
+                        eventId: startData.event_id,
+                        sourcePath,
+                        refPath
                     },
                 });
 
