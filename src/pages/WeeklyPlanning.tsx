@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Circle, Target, CalendarDays, Music, Share2, Disc, Video, Archive, Zap } from "lucide-react";
+import { CheckCircle2, Circle, Target, CalendarDays, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface DayPlan {
@@ -15,139 +15,7 @@ interface DayPlan {
   successMetric: string;
 }
 
-const WEEKLY_SPRINT: DayPlan[] = [
-  {
-    day: "MONDAY",
-    title: "Loop Extraction & Sound Design",
-    icon: Music,
-    color: "text-blue-400",
-    primaryFocus: "Create 10–15 original loops (melodic and/or rhythmic). No full beats. No arrangement.",
-    objectives: [
-      "Design unique textures, chords, bass phrases, and drum patterns",
-      "Work in MIDI first, then commit to audio",
-      "Push originality over perfection"
-    ],
-    secondaryTasks: [
-      "Build custom drum racks and instrument presets",
-      "Process loops heavily (EQ, saturation, modulation, resampling)",
-      "Label and export loops cleanly (key + BPM)",
-      "Discard anything mid—only keep loops you’d send to another producer"
-    ],
-    successMetric: "A folder of loops that instantly spark ideas when dropped into a session."
-  },
-  {
-    day: "TUESDAY",
-    title: "The Foundation (Drum Processing & Pocket)",
-    icon: Disc,
-    color: "text-purple-400",
-    primaryFocus: "Create 5–10 strong rhythmic foundations using Monday’s loops.",
-    objectives: [
-      "Pair loops with drums that feel expensive",
-      "Lock in groove, swing, and bounce",
-      "Prioritize kick, snare, and bass relationship"
-    ],
-    secondaryTasks: [
-      "Level drums early—no sloppy gain staging",
-      "Test multiple drum kits per loop",
-      "Print drum bounces for speed later",
-      "Kill weak ideas fast and move on"
-    ],
-    successMetric: "Foundations that make you nod without melody distractions."
-  },
-  {
-    day: "WEDNESDAY",
-    title: "Full Arrangement & Beat Finishing",
-    icon: CalendarDays,
-    color: "text-indigo-400",
-    primaryFocus: "Turn the best 3–5 ideas into fully arranged beats.",
-    objectives: [
-      "Build full song structures (Intro, Verse, Hook, Bridge/Drop, Outro)",
-      "Add transitions, drops, ear candy, and energy shifts",
-      "Commit to decisions—no endless tweaking"
-    ],
-    secondaryTasks: [
-      "Mute test: does the beat still hit when elements drop out?",
-      "Simplify arrangements for vocal space",
-      "Bounce clean rough mixes",
-      "Title beats and tag vibe/tempo/genre"
-    ],
-    successMetric: "Finished beats that feel ready for artists—not demos."
-  },
-  {
-    day: "THURSDAY",
-    title: "Collaboration & Outreach",
-    icon: Share2,
-    color: "text-green-400",
-    primaryFocus: "Expand reach and pipeline through intentional networking.",
-    objectives: [
-      "Send loops or beats to 5–10 producers",
-      "Reach out to vocalists/artists that fit your sound",
-      "Review any incoming stems or collabs"
-    ],
-    secondaryTasks: [
-      "Follow up on past conversations (no spamming)",
-      "Organize collab folders and notes",
-      "Identify 1–2 high-potential partnerships to pursue deeper"
-    ],
-    successMetric: "At least one real connection or ongoing collaboration per week."
-  },
-  {
-    day: "FRIDAY",
-    title: "Mixdown & Master Polish",
-    icon: Target,
-    color: "text-orange-400",
-    primaryFocus: "Make Wednesday’s beats industry-ready.",
-    objectives: [
-      "Final EQ, compression, saturation, and balance",
-      "Tight low end and clean mids",
-      "Competitive loudness without killing dynamics"
-    ],
-    secondaryTasks: [
-      "Reference against commercial tracks",
-      "Print multiple versions (tagged, untagged, instrumental)",
-      "Fix problem frequencies and phase issues",
-      "Create stems if needed"
-    ],
-    successMetric: "Beats that translate across headphones, cars, clubs, and phones."
-  },
-  {
-    day: "SATURDAY",
-    title: "Content Creation & Branding",
-    icon: Video,
-    color: "text-pink-400",
-    primaryFocus: "Turn production into visibility.",
-    objectives: [
-      "Screen record sessions for Reels/TikTok/Shorts",
-      "Highlight drops, transitions, or sound design moments",
-      "Post consistently—not perfectly"
-    ],
-    secondaryTasks: [
-      "Write captions, tags, and titles",
-      "Prep cover art or visual templates",
-      "Batch content for future weeks",
-      "Study what content performed well"
-    ],
-    successMetric: "At least 3–5 pieces of content ready or posted."
-  },
-  {
-    day: "SUNDAY",
-    title: "Admin, Cataloging & Forward Planning",
-    icon: Archive,
-    color: "text-gray-400",
-    primaryFocus: "Protect your work and set up next week.",
-    objectives: [
-      "Organize sessions, stems, and exports",
-      "Back up everything (local + cloud)",
-      "Upload beats to your store or private catalog"
-    ],
-    secondaryTasks: [
-      "Review what worked creatively this week",
-      "Identify bottlenecks or weak points",
-      "Set 1–3 clear goals for next sprint"
-    ],
-    successMetric: "Zero chaos. Clear direction for Monday."
-  }
-];
+const WEEKLY_SPRINT: DayPlan[] = [];
 
 export default function WeeklyPlanning() {
   const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>({});

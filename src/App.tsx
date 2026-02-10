@@ -13,9 +13,10 @@ import CreationBeats from "./pages/CreationBeats";
 import CreationLoops from "./pages/CreationLoops";
 import ScoreBeats from "./pages/ScoreBeats";
 import ScoreLoops from "./pages/ScoreLoops";
-import MelodyGenerator from "./pages/MelodyGenerator";
+
 import WeeklyPlanning from "./pages/WeeklyPlanning";
 import AnalyticsHub from "./pages/AnalyticsHub";
+import VoiceCloner from "./pages/VoiceCloner";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -83,22 +84,23 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/melody-generator"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <MelodyGenerator />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
+
             <Route
               path="/planning"
               element={
                 <ProtectedRoute>
                   <AppLayout>
                     <WeeklyPlanning />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/voice-cloner"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <VoiceCloner />
                   </AppLayout>
                 </ProtectedRoute>
               }

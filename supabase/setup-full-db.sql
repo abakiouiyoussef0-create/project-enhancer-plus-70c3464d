@@ -104,11 +104,11 @@ CREATE POLICY "Users can update their own planning" ON public.planning FOR UPDAT
 CREATE POLICY "Users can delete their own planning" ON public.planning FOR DELETE USING (auth.uid() = user_id);
 
 
--- 5. Storage Bucket (Melodies)
+-- 5. Storage Bucket (Vocals)
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
-  'melodies', 
-  'melodies', 
+  'vocals', 
+  'vocals', 
   true,
   52428800, -- 50MB
   ARRAY['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/x-wav', 'audio/wave']
@@ -116,12 +116,13 @@ VALUES (
 ON CONFLICT (id) DO NOTHING;
 
 -- Storage Policies
-DROP POLICY IF EXISTS "Users can upload melodies" ON storage.objects;
-DROP POLICY IF EXISTS "Users can view melodies" ON storage.objects;
-DROP POLICY IF EXISTS "Users can update melodies" ON storage.objects;
-DROP POLICY IF EXISTS "Users can delete melodies" ON storage.objects;
+DROP POLICY IF EXISTS "Users can upload vocals" ON storage.objects;
+DROP POLICY IF EXISTS "Users can view vocals" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update vocals" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete vocals" ON storage.objects;
 
-CREATE POLICY "Users can upload melodies" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'melodies' AND auth.role() = 'authenticated');
-CREATE POLICY "Users can view melodies" ON storage.objects FOR SELECT USING (bucket_id = 'melodies');
-CREATE POLICY "Users can update melodies" ON storage.objects FOR UPDATE USING (bucket_id = 'melodies' AND auth.uid() = owner);
-CREATE POLICY "Users can delete melodies" ON storage.objects FOR DELETE USING (bucket_id = 'melodies' AND auth.uid() = owner);
+CREATE POLICY "Users can upload vocals" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'vocals' AND auth.role() = 'authenticated');
+CREATE POLICY "Users can view vocals" ON storage.objects FOR SELECT USING (bucket_id = 'vocals');
+CREATE POLICY "Users can update vocals" ON storage.objects FOR UPDATE USING (bucket_id = 'vocals' AND auth.uid() = owner);
+CREATE POLICY "Users can delete vocals" ON storage.objects FOR DELETE USING (bucket_id = 'vocals' AND auth.uid() = owner);
+
