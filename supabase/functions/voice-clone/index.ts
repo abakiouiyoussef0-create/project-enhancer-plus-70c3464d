@@ -16,7 +16,7 @@ serve(async (req) => {
         const { action, sourcePath, refPath, pitch, strength, eventId } = body
 
         const HF_TOKEN = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN')
-        const SPACE_URL = "https://ijge-applio-rvc-fork.hf.space"
+        const SPACE_URL = "https://r3gm-rvc-inference-hf.hf.space"
 
         if (!HF_TOKEN) throw new Error('Missing Hugging Face Token')
 
@@ -26,21 +26,17 @@ serve(async (req) => {
 
         // MODE 1: START CONVERSION
         if (action === "start") {
-            console.log(`Checking files: ${sourcePath}, ${refPath}`)
+            console.log(`Async Start for: ${sourcePath}`)
 
-            // Instead of downloading, generate Signed URLs (valid for 10 minutes)
-            // This is ZERO-MEMORY because we only send the link!
             const [sourceSigned, refSigned] = await Promise.all([
-                supabase.storage.from('vocals').createSignedUrl(sourcePath, 600),
-                supabase.storage.from('vocals').createSignedUrl(refPath, 600)
+                supabase.storage.from('vocals').createSignedUrl(sourcePath, 3600),
+                supabase.storage.from('vocals').createSignedUrl(refPath, 3600)
             ])
 
-            if (sourceSigned.error || !sourceSigned.data?.signedUrl) throw new Error(`Signed URL Error: ${sourceSigned.error?.message}`)
-            if (refSigned.error || !refSigned.data?.signedUrl) throw new Error(`Signed URL Error: ${refSigned.error?.message}`)
+            if (sourceSigned.error || !sourceSigned.data?.signedUrl) throw new Error("Source URL error")
+            if (refSigned.error || !refSigned.data?.signedUrl) throw new Error("Reference URL error")
 
-            console.log("URLs generated. Initiating Gradio call...")
-
-            // Initiate Gradio call with URLs
+            // Initiate with newer Gradio /call protocol
             const initiateResponse = await fetch(`${SPACE_URL}/gradio_api/call/predict`, {
                 method: "POST",
                 headers: {
@@ -49,8 +45,8 @@ serve(async (req) => {
                 },
                 body: JSON.stringify({
                     data: [
-                        sourceSigned.data.signedUrl, // Pass URL directly
-                        refSigned.data.signedUrl,    // Pass URL directly
+                        sourceSigned.data.signedUrl,
+                        refSigned.data.signedUrl,
                         parseInt(pitch as string) || 0,
                         "rmvpe",
                         0.75,
@@ -60,13 +56,12 @@ serve(async (req) => {
                         0.25,
                         0.33,
                     ],
-                    fn_index: 0
                 }),
             })
 
             if (!initiateResponse.ok) {
-                const errText = await initiateResponse.text()
-                throw new Error(`Init Failed: ${errText}`)
+                const err = await initiateResponse.text()
+                throw new Error(`AI Bridge Init Failed: ${err}`)
             }
 
             const { event_id } = await initiateResponse.json()
@@ -82,7 +77,7 @@ serve(async (req) => {
                 headers: { "Authorization": `Bearer ${HF_TOKEN}` }
             })
 
-            if (!pollResponse.ok) throw new Error("Gradio polling failed")
+            if (!pollResponse.ok) throw new Error("Polling failed")
 
             const text = await pollResponse.text()
 
@@ -95,11 +90,8 @@ serve(async (req) => {
                         resultUrl = `${SPACE_URL}/file=${resultUrl}`
                     }
 
-                    // Only cleanup on completion to save CPU during polling
-                    // We don't need to await this
-                    supabase.storage.from('vocals').remove([sourcePath, refPath]).then(() => {
-                        console.log("Storage cleaned up")
-                    }).catch(e => console.error("Cleanup failed:", e))
+                    // Async cleanup
+                    supabase.storage.from('vocals').remove([sourcePath, refPath]).catch(e => console.error("Cleanup error:", e))
 
                     return new Response(JSON.stringify({ status: "complete", result: resultUrl }), {
                         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -118,10 +110,10 @@ serve(async (req) => {
             })
         }
 
-        throw new Error("Invalid request")
+        throw new Error("Invalid action")
 
     } catch (error) {
-        console.error("Internal Error:", error.message)
+        console.error("Critical Failure:", error.message)
         return new Response(JSON.stringify({ error: error.message }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 500,
