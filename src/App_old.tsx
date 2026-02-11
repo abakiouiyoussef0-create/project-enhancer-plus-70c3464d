@@ -1,4 +1,4 @@
-import { Toaster } from "@/components/ui/toaster";
+﻿import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -13,10 +13,9 @@ import CreationBeats from "./pages/CreationBeats";
 import CreationLoops from "./pages/CreationLoops";
 import ScoreBeats from "./pages/ScoreBeats";
 import ScoreLoops from "./pages/ScoreLoops";
-
+import MelodyGenerator from "./pages/MelodyGenerator";
 import WeeklyPlanning from "./pages/WeeklyPlanning";
 import AnalyticsHub from "./pages/AnalyticsHub";
-import AISampleGenerator from "./pages/AISampleGenerator";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -84,23 +83,22 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-
+            <Route
+              path="/melody-generator"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <MelodyGenerator />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/planning"
               element={
                 <ProtectedRoute>
                   <AppLayout>
                     <WeeklyPlanning />
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/sample-generator"
-              element={
-                <ProtectedRoute>
-                  <AppLayout>
-                    <AISampleGenerator />
                   </AppLayout>
                 </ProtectedRoute>
               }

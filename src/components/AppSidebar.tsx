@@ -1,4 +1,4 @@
-import { Zap, Music, RefreshCw, Target, Calendar, BarChart3, LogOut, KeyRound, Mic2 } from 'lucide-react';
+import { Zap, Music, RefreshCw, Target, Calendar, BarChart3, LogOut, KeyRound, Sparkles } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -31,7 +31,7 @@ const menuItems = [
   { title: 'Creation Loops', url: '/loops', icon: RefreshCw },
   { title: 'Score Beats', url: '/score-beats', icon: Target },
   { title: 'Score Loops', url: '/score-loops', icon: Target },
-  { title: 'AI Voice Cloner', url: '/voice-cloner', icon: Mic2 },
+  { title: 'AI Sample Generator', url: '/sample-generator', icon: Sparkles },
   { title: 'Weekly Planning', url: '/planning', icon: Calendar },
   { title: 'Analytics Hub', url: '/analytics', icon: BarChart3 },
 ];
