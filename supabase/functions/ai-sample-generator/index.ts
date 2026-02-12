@@ -140,19 +140,20 @@ serve(async (req) => {
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           )
-        } catch (error) {
+        } catch (error: unknown) {
+          const msg = error instanceof Error ? error.message : 'Unknown error';
           // Update database with error
           await supabase
             .from('sample_generations')
             .update({
               status: 'error',
-              error_message: error.message,
+              error_message: msg,
               completed_at: new Date().toISOString()
             })
             .eq('id', eventId)
 
           return new Response(
-            JSON.stringify({ status: 'error', message: error.message }),
+            JSON.stringify({ status: 'error', message: msg }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           )
         }
@@ -184,9 +185,10 @@ serve(async (req) => {
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
-      } catch (error) {
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : 'Unknown error';
         return new Response(
-          JSON.stringify({ status: 'error', message: error.message }),
+          JSON.stringify({ status: 'error', message: msg }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
@@ -197,10 +199,11 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
     )
 
-  } catch (error) {
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Unknown error';
     console.error('Function error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: msg }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }

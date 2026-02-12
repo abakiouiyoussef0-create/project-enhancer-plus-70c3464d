@@ -17,7 +17,7 @@ export function useLoops() {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as Loop[];
+      return (data ?? []) as unknown as Loop[];
     },
   });
 }
@@ -37,7 +37,7 @@ export function useCreateLoop() {
         .single();
       
       if (error) throw error;
-      return data as Loop;
+      return data as unknown as Loop;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['loops'] });
@@ -62,7 +62,7 @@ export function useUpdateLoop() {
         .single();
       
       if (error) throw error;
-      return data as Loop;
+      return data as unknown as Loop;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['loops'] });

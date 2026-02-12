@@ -17,7 +17,7 @@ export function useBeats() {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as Beat[];
+      return (data ?? []) as unknown as Beat[];
     },
   });
 }
@@ -37,7 +37,7 @@ export function useCreateBeat() {
         .single();
       
       if (error) throw error;
-      return data as Beat;
+      return data as unknown as Beat;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['beats'] });
@@ -62,7 +62,7 @@ export function useUpdateBeat() {
         .single();
       
       if (error) throw error;
-      return data as Beat;
+      return data as unknown as Beat;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['beats'] });
