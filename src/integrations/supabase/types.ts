@@ -16,11 +16,16 @@ export type Database = {
     Tables: {
       beats: {
         Row: {
+          arrangement_rating: number | null
           bpm: number | null
           created_at: string
+          dope_rating: number | null
           id: string
+          instruments_used: number | null
           is_placed: boolean | null
+          mix_rating: number | null
           mood: string | null
+          music_key: string | null
           notes: string | null
           quality_score: number | null
           status: string | null
@@ -29,11 +34,16 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          arrangement_rating?: number | null
           bpm?: number | null
           created_at?: string
+          dope_rating?: number | null
           id?: string
+          instruments_used?: number | null
           is_placed?: boolean | null
+          mix_rating?: number | null
           mood?: string | null
+          music_key?: string | null
           notes?: string | null
           quality_score?: number | null
           status?: string | null
@@ -42,11 +52,16 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          arrangement_rating?: number | null
           bpm?: number | null
           created_at?: string
+          dope_rating?: number | null
           id?: string
+          instruments_used?: number | null
           is_placed?: boolean | null
+          mix_rating?: number | null
           mood?: string | null
+          music_key?: string | null
           notes?: string | null
           quality_score?: number | null
           status?: string | null
@@ -58,10 +73,15 @@ export type Database = {
       }
       loops: {
         Row: {
+          arrangement_rating: number | null
           bpm: number | null
           created_at: string
+          dope_rating: number | null
           id: string
+          instruments_used: number | null
           is_placed: boolean | null
+          mix_rating: number | null
+          music_key: string | null
           notes: string | null
           quality_score: number | null
           royalty_status: string | null
@@ -72,10 +92,15 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          arrangement_rating?: number | null
           bpm?: number | null
           created_at?: string
+          dope_rating?: number | null
           id?: string
+          instruments_used?: number | null
           is_placed?: boolean | null
+          mix_rating?: number | null
+          music_key?: string | null
           notes?: string | null
           quality_score?: number | null
           royalty_status?: string | null
@@ -86,10 +111,15 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          arrangement_rating?: number | null
           bpm?: number | null
           created_at?: string
+          dope_rating?: number | null
           id?: string
+          instruments_used?: number | null
           is_placed?: boolean | null
+          mix_rating?: number | null
+          music_key?: string | null
           notes?: string | null
           quality_score?: number | null
           royalty_status?: string | null
