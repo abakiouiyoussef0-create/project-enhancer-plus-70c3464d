@@ -1,220 +1,151 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { 
   Music2, 
-  Upload, 
   Download, 
-  Play, 
-  Pause, 
   RefreshCw, 
-  Zap, 
-  Volume2, 
-  Settings,
-  Radio,
-  Piano,
-  Guitar,
-  Mic,
-  Drum,
-  ChevronRight,
   Sparkles,
-  FileAudio,
-  FileMusic
+  Pin,
+  PinOff,
+  Wand2,
+  Volume2,
+  MessageSquare
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { useDropzone } from 'react-dropzone';
 import { supabase } from "@/integrations/supabase/client";
-
-const INSTRUMENTS = [
-  { id: 'acoustic-guitar', name: 'Acoustic Guitar', icon: Guitar },
-  { id: 'electric-guitar-clean', name: 'Electric Guitar (Clean)', icon: Guitar },
-  { id: 'electric-guitar-distorted', name: 'Electric Guitar (Distorted)', icon: Guitar },
-  { id: 'rhodes', name: 'Rhodes', icon: Piano },
-  { id: 'grand-piano', name: 'Grand Piano', icon: Piano },
-  { id: 'synth-lead', name: 'Synth Lead', icon: Radio },
-  { id: 'cello', name: 'Cello', icon: Music2 },
-  { id: 'violin', name: 'Violin', icon: Music2 },
-  { id: 'trumpet', name: 'Trumpet', icon: Mic },
-  { id: 'saxophone', name: 'Saxophone', icon: Mic },
-  { id: 'flute', name: 'Flute', icon: Music2 },
-  { id: 'clarinet', name: 'Clarinet', icon: Music2 },
-  { id: 'bass-guitar', name: 'Bass Guitar', icon: Guitar },
-  { id: 'synth-bass', name: 'Synth Bass', icon: Radio },
-  { id: 'double-bass', name: 'Double Bass', icon: Music2 },
-  { id: 'drums', name: 'Drums', icon: Drum },
-  { id: 'percussion', name: 'Percussion', icon: Drum },
-  { id: 'harp', name: 'Harp', icon: Music2 },
-  { id: 'organ', name: 'Organ', icon: Piano },
-  { id: 'choir', name: 'Choir', icon: Mic },
-  { id: 'strings', name: 'Strings', icon: Music2 },
-  { id: 'brass', name: 'Brass', icon: Mic },
-  { id: 'woodwinds', name: 'Woodwinds', icon: Music2 },
-  { id: 'synth-pad', name: 'Synth Pad', icon: Radio },
-  { id: 'synth-pluck', name: 'Synth Pluck', icon: Radio },
-  { id: 'bell', name: 'Bell', icon: Music2 },
-  { id: 'xylophone', name: 'Xylophone', icon: Music2 },
-  { id: 'accordion', name: 'Accordion', icon: Music2 },
-  { id: 'banjo', name: 'Banjo', icon: Guitar },
-  { id: 'mandolin', name: 'Mandolin', icon: Guitar }
-];
-
-const GENRES = [
-  { id: 'emotional-rap', name: 'Emotional Rap' },
-  { id: 'drill', name: 'Drill' },
-  { id: 'uk-rap', name: 'UK Rap' },
-  { id: 'trap', name: 'Trap' },
-  { id: 'lofi', name: 'Lo-Fi' },
-  { id: 'cinematic', name: 'Cinematic' }
-];
 
 const MUSICAL_KEYS = [
   'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'
 ];
 
 const SCALES = [
-  'Major', 'Minor', 'Pentatonic', 'Blues', 'Chromatic', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian', 'Locrian'
+  'Major', 'Minor', 'Pentatonic', 'Blues', 'Dorian', 'Phrygian', 'Mixolydian'
 ];
+
+interface GeneratedSample {
+  id: string;
+  audioUrl: string;
+  isPlaying: boolean;
+  isPinned: boolean;
+  generationNumber: number;
+}
 
 export default function AISampleGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStatus, setGenerationStatus] = useState<string>("");
   const [progress, setProgress] = useState(0);
-  const [audioFile, setAudioFile] = useState<File | null>(null);
-  const [selectedInstrument, setSelectedInstrument] = useState<string>("");
-  const [selectedGenre, setSelectedGenre] = useState<string>("");
-  const [bpm, setBpm] = useState([120]);
-  const [musicalKey, setMusicalKey] = useState<string>("C");
-  const [scale, setScale] = useState<string>("Major");
-  const [generatedAudioUrl, setGeneratedAudioUrl] = useState<string | null>(null);
-  const [generatedMidiUrl, setGeneratedMidiUrl] = useState<string | null>(null);
-  const [isMatching, setIsMatching] = useState(false);
-  const [audioPreview, setAudioPreview] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
+  
+  // Prompt inputs
+  const [mainPrompt, setMainPrompt] = useState("");
+  const [refinementPrompt, setRefinementPrompt] = useState("");
+  const [isRefinementMode, setIsRefinementMode] = useState(false);
+  
+  // Music controls
+  const [bpm, setBpm] = useState([140]);
+  const [musicalKey, setMusicalKey] = useState<string>("G");
+  const [scale, setScale] = useState<string>("Minor");
+  
+  // Generated samples
+  const [samples, setSamples] = useState<GeneratedSample[]>([]);
+  const [selectedSampleId, setSelectedSampleId] = useState<string | null>(null);
+  const [generationCount, setGenerationCount] = useState(0);
+  
+  const audioRefs = useRef<{ [key: string]: HTMLAudioElement | null }>({});
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
-      const file = acceptedFiles[0];
-      if (file.type.startsWith('audio/')) {
-        setAudioFile(file);
-        const url = URL.createObjectURL(file);
-        setAudioPreview(url);
-        toast.success(`Audio file uploaded: ${file.name}`);
-      } else {
-        toast.error('Please upload an audio file (WAV/MP3)');
-      }
-    }
-  }, []);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'audio/*': ['.wav', '.mp3', '.m4a', '.flac']
-    },
-    multiple: false
-  });
-
-  const generateSample = async () => {
-    if (!audioFile) {
-      toast.error("Please upload an audio file first.");
-      return;
-    }
-    if (!selectedInstrument) {
-      toast.error("Please select an instrument.");
-      return;
-    }
-    if (!selectedGenre) {
-      toast.error("Please select a genre.");
+  const generateSamples = async () => {
+    const prompt = isRefinementMode && selectedSampleId ? refinementPrompt : mainPrompt;
+    
+    if (!prompt.trim()) {
+      toast.error("Please enter a description for the vocal sample.");
       return;
     }
 
     setIsGenerating(true);
-    setGenerationStatus("Uploading audio...");
+    setGenerationStatus("Initializing AI...");
     setProgress(0);
-    setGeneratedAudioUrl(null);
-    setGeneratedMidiUrl(null);
 
     try {
-      // 1. Upload Source File to Supabase Storage
-      setGenerationStatus("Uploading audio...");
+      // Build full prompt with music parameters
+      const fullPrompt = `${prompt}, ${bpm[0]} BPM, Key: ${musicalKey} ${scale}, no drums, vocal only, ethnic, high quality`;
+      
+      setGenerationStatus("Generating 4 vocal variations...");
       setProgress(20);
-      const sourcePath = `${crypto.randomUUID()}_${audioFile.name}`;
-      const { error: sourceError } = await supabase.storage
-        .from('audio-samples')
-        .upload(sourcePath, audioFile);
 
-      if (sourceError) throw sourceError;
-
-      // 2. Generate sample using AI API
-      setGenerationStatus("AI Processing...");
-      setProgress(40);
-      const { data: generationData, error: generationError } = await supabase.functions.invoke('ai-sample-generator', {
+      // Call the edge function to generate 4 samples
+      const { data, error } = await supabase.functions.invoke('ai-sample-generator', {
         body: {
-          action: "generate",
-          sourcePath,
-          instrument: selectedInstrument,
-          genre: selectedGenre,
+          action: "generate_vocals",
+          prompt: fullPrompt,
           bpm: bpm[0],
           key: musicalKey,
-          scale: scale
+          scale: scale,
+          count: 4,
+          previousSampleId: isRefinementMode ? selectedSampleId : null,
+          refinementInstructions: isRefinementMode ? refinementPrompt : null
         },
       });
 
-      if (generationError) throw generationError;
+      if (error) throw error;
 
-      // 3. Poll for result
-      setGenerationStatus("Processing sample...");
       setProgress(60);
-      let isComplete = false;
-      let resultAudioUrl = "";
-      let resultMidiUrl = "";
+      setGenerationStatus("Processing audio...");
+
+      // Poll for completion
       let attempts = 0;
       const maxAttempts = 60;
-
-      while (!isComplete && attempts < maxAttempts) {
+      
+      while (attempts < maxAttempts) {
         setProgress(Math.min(60 + (attempts / maxAttempts) * 30, 90));
-        setGenerationStatus(`Processing... (${Math.round((attempts / maxAttempts) * 100)}%)`);
-
+        
         const { data: pollData, error: pollError } = await supabase.functions.invoke('ai-sample-generator', {
           body: {
-            action: "check",
-            eventId: generationData.event_id,
-            sourcePath
+            action: "check_generation",
+            generationId: data.generation_id
           },
         });
 
         if (pollError) throw pollError;
 
         if (pollData?.status === "complete") {
-          resultAudioUrl = pollData.audio_url;
-          resultMidiUrl = pollData.midi_url;
-          isComplete = true;
+          const newGenCount = generationCount + 1;
+          setGenerationCount(newGenCount);
+          
+          const newSamples: GeneratedSample[] = pollData.samples.map((sample: any, index: number) => ({
+            id: `${newGenCount}-${index}`,
+            audioUrl: sample.audio_url,
+            isPlaying: false,
+            isPinned: false,
+            generationNumber: newGenCount
+          }));
+          
+          setSamples(newSamples);
+          setProgress(100);
+          toast.success(`Generated 4 vocal samples! Generation #${newGenCount}`);
+          
+          if (isRefinementMode) {
+            setIsRefinementMode(false);
+            setRefinementPrompt("");
+          }
           break;
         }
 
         if (pollData?.status === "error") {
-          throw new Error("AI Processing failed");
+          throw new Error(pollData.message || "Generation failed");
         }
 
         await new Promise(r => setTimeout(r, 3000));
         attempts++;
       }
 
-      if (!resultAudioUrl) throw new Error("Generation timed out");
-
-      setGeneratedAudioUrl(resultAudioUrl);
-      setGeneratedMidiUrl(resultMidiUrl);
-      setProgress(100);
-      toast.success("Sample generated successfully! ⚡");
-
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       toast.error(`Generation failed: ${error.message || "Please try again."}`);
     } finally {
@@ -224,54 +155,48 @@ export default function AISampleGenerator() {
     }
   };
 
-  const matchToOriginal = async () => {
-    if (!audioFile || !generatedAudioUrl) {
-      toast.error("Please upload audio and generate a sample first.");
-      return;
-    }
+  const pinSample = (sampleId: string) => {
+    const sample = samples.find(s => s.id === sampleId);
+    if (!sample) return;
 
-    setIsMatching(true);
-    try {
-      setGenerationStatus("Matching to original...");
-      setProgress(50);
-
-      const { data, error } = await supabase.functions.invoke('ai-sample-generator', {
-        body: {
-          action: "match",
-          originalPath: audioFile.name,
-          generatedPath: generatedAudioUrl
-        },
-      });
-
-      if (error) throw error;
-
-      setGeneratedAudioUrl(data.matched_audio_url);
-      setProgress(100);
-      toast.success("Sample matched to original! 🎯");
-
-    } catch (error) {
-      toast.error(`Matching failed: ${error.message}`);
-    } finally {
-      setIsMatching(false);
-      setGenerationStatus("");
-      setProgress(0);
+    if (sample.isPinned) {
+      // Unpin
+      setSamples(prev => prev.map(s => s.id === sampleId ? { ...s, isPinned: false } : s));
+      if (selectedSampleId === sampleId) {
+        setSelectedSampleId(null);
+      }
+      toast.info("Sample unpinned");
+    } else {
+      // Pin this sample and unpin others
+      setSamples(prev => prev.map(s => ({ ...s, isPinned: s.id === sampleId })));
+      setSelectedSampleId(sampleId);
+      toast.success("Sample pinned! Ready for refinement.");
     }
   };
 
-  const downloadFile = async (url: string, filename: string) => {
+  const startRefinement = () => {
+    if (!selectedSampleId) {
+      toast.error("Please pin a sample first to refine it.");
+      return;
+    }
+    setIsRefinementMode(true);
+    toast.info("Enter your refinement instructions below and click GENERATE");
+  };
+
+  const downloadSample = async (audioUrl: string, sampleId: string) => {
     try {
-      const response = await fetch(url);
+      const response = await fetch(audioUrl);
       const blob = await response.blob();
       const downloadUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = downloadUrl;
-      a.download = filename;
+      a.download = `vocal-sample-gen${sampleId}.wav`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(downloadUrl);
-      toast.success(`${filename} downloaded!`);
-    } catch (error) {
+      toast.success(`Sample ${sampleId} downloaded!`);
+    } catch (error: any) {
       toast.error(`Download failed: ${error.message}`);
     }
   };
@@ -280,14 +205,14 @@ export default function AISampleGenerator() {
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       {/* Header */}
       <div className="flex flex-col gap-2 relative overflow-hidden rounded-xl p-8 border border-[#00D4FF]/20 bg-gradient-to-r from-background via-[#0a0a0a] to-[#00D4FF]/5">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=2070&auto=format&fit=crop')] opacity-5 bg-cover bg-center mix-blend-overlay" />
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=2070&auto=format&fit=crop')] opacity-5 bg-cover bg-center mix-blend-overlay" />
         <motion.h1
           className="text-5xl font-black tracking-tighter bg-gradient-to-r from-[#00D4FF] via-[#0099CC] to-[#0066FF] bg-clip-text text-transparent relative z-10"
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          AI SAMPLE GENERATOR v2.0
+          PERUNZ AI VOCAL GENERATOR
         </motion.h1>
         <motion.p
           className="text-xl text-muted-foreground relative z-10 max-w-2xl"
@@ -295,155 +220,55 @@ export default function AISampleGenerator() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          Transform your melodies into professional samples with AI-powered instrumentation.
+          Generate ethnic vocal samples with AI. Describe what you want, get 4 variations, refine your favorite.
         </motion.p>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        {/* Left Column: Input & Controls */}
-        <div className="xl:col-span-2 space-y-8">
-          {/* Audio Input */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        {/* Left Column: Prompt & Controls */}
+        <div className="space-y-8">
+          {/* Main Prompt Input */}
           <Card className="border-[#00D4FF]/20 bg-[#0a0a0a]/40 backdrop-blur-xl shadow-2xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-[#00D4FF]">
-                <Upload className="w-6 h-6" />
-                Audio Input
+                <MessageSquare className="w-6 h-6" />
+                {isRefinementMode ? "Refinement Instructions" : "Describe Your Vocal"}
               </CardTitle>
-              <CardDescription>Upload your melody as the structure seed</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div
-                {...getRootProps()}
-                className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-4 transition-colors cursor-pointer ${
-                  isDragActive 
-                    ? 'border-[#00D4FF] bg-[#00D4FF]/10' 
-                    : 'border-[#00D4FF]/20 hover:border-[#00D4FF]/40 bg-background/20'
-                }`}
-              >
-                <input {...getInputProps()} />
-                <FileAudio className={`w-12 h-12 ${isDragActive ? 'text-[#00D4FF]' : 'text-[#00D4FF]/60'} ${isDragActive ? 'animate-pulse' : ''}`} />
-                <div className="text-center">
-                  <p className="font-bold text-white">
-                    {isDragActive ? 'Drop your audio here' : 'Drag & drop your audio file'}
-                  </p>
-                  <p className="text-sm text-muted-foreground">WAV, MP3, M4A, FLAC supported</p>
-                </div>
-              </div>
-              
-              {audioFile && (
-                <div className="mt-4 p-4 rounded-lg bg-[#00D4FF]/10 border border-[#00D4FF]/20">
-                  <div className="flex items-center gap-3">
-                    <FileMusic className="w-5 h-5 text-[#00D4FF]" />
-                    <span className="text-white font-medium">{audioFile.name}</span>
-                  </div>
-                  {audioPreview && (
-                    <audio 
-                      ref={audioRef} 
-                      src={audioPreview} 
-                      controls 
-                      className="mt-3 w-full h-8"
-                    />
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Instrument & Genre Selection */}
-          <Card className="border-[#00D4FF]/20 bg-[#0a0a0a]/40 backdrop-blur-xl shadow-2xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-[#00D4FF]">
-                <Settings className="w-6 h-6" />
-                Sample Configuration
-              </CardTitle>
+              <CardDescription>
+                {isRefinementMode 
+                  ? `Refining pinned sample. Example: "Keep first 8 seconds, make it more emotional after"`
+                  : "Describe the vocal you want. Example: nordic female melodic ethnic high quality"
+                }
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Instrument Selector */}
-              <div className="space-y-4">
-                <Label className="text-sm font-bold uppercase tracking-widest text-[#00D4FF]">Instrument</Label>
-                <Tabs defaultValue="grid" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 bg-[#0a0a0a]/60">
-                    <TabsTrigger value="grid" className="data-[state=active]:bg-[#00D4FF]/20 data-[state=active]:text-[#00D4FF]">Grid View</TabsTrigger>
-                    <TabsTrigger value="search" className="data-[state=active]:bg-[#00D4FF]/20 data-[state=active]:text-[#00D4FF]">Search</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="grid" className="mt-4">
-                    <div className="grid grid-cols-3 md:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
-                      {INSTRUMENTS.map((instrument) => {
-                        const Icon = instrument.icon;
-                        return (
-                          <Button
-                            key={instrument.id}
-                            variant={selectedInstrument === instrument.id ? "default" : "outline"}
-                            className={`h-auto p-3 flex flex-col items-center gap-2 ${
-                              selectedInstrument === instrument.id 
-                                ? 'bg-[#00D4FF]/20 border-[#00D4FF] text-[#00D4FF]' 
-                                : 'border-[#00D4FF]/20 hover:border-[#00D4FF]/40 hover:bg-[#00D4FF]/10'
-                            }`}
-                            onClick={() => setSelectedInstrument(instrument.id)}
-                          >
-                            <Icon className="w-6 h-6" />
-                            <span className="text-xs text-center">{instrument.name}</span>
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  </TabsContent>
-                  <TabsContent value="search" className="mt-4">
-                    <Select value={selectedInstrument} onValueChange={setSelectedInstrument}>
-                      <SelectTrigger className="bg-[#0a0a0a]/60 border-[#00D4FF]/20">
-                        <SelectValue placeholder="Select an instrument" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#0a0a0a] border-[#00D4FF]/20">
-                        {INSTRUMENTS.map((instrument) => (
-                          <SelectItem key={instrument.id} value={instrument.id} className="text-white hover:bg-[#00D4FF]/20">
-                            {instrument.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TabsContent>
-                </Tabs>
-              </div>
-
-              {/* Genre Selector */}
-              <div className="space-y-4">
-                <Label className="text-sm font-bold uppercase tracking-widest text-[#00D4FF]">Genre</Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {GENRES.map((genre) => (
-                    <Button
-                      key={genre.id}
-                      variant={selectedGenre === genre.id ? "default" : "outline"}
-                      className={`${
-                        selectedGenre === genre.id 
-                          ? 'bg-[#00D4FF]/20 border-[#00D4FF] text-[#00D4FF]' 
-                          : 'border-[#00D4FF]/20 hover:border-[#00D4FF]/40 hover:bg-[#00D4FF]/10'
-                      }`}
-                      onClick={() => setSelectedGenre(genre.id)}
-                    >
-                      {genre.name}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+              <Textarea
+                placeholder={isRefinementMode 
+                  ? "Don't change first 8 seconds, make the female sing more emotionally after that..."
+                  : "nordic vocal female melodic high quality without drums"
+                }
+                value={isRefinementMode ? refinementPrompt : mainPrompt}
+                onChange={(e) => isRefinementMode ? setRefinementPrompt(e.target.value) : setMainPrompt(e.target.value)}
+                className="min-h-[120px] bg-[#0a0a0a]/60 border-[#00D4FF]/20 text-white placeholder:text-muted-foreground"
+              />
 
               {/* Music Controls */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
                   <div className="flex justify-between">
                     <Label className="text-sm font-bold text-white">BPM</Label>
                     <span className="text-[#00D4FF] font-mono">{bpm[0]}</span>
                   </div>
                   <Slider
                     value={bpm}
-                    min={60}
-                    max={200}
+                    min={80}
+                    max={180}
                     step={1}
                     onValueChange={setBpm}
-                    className="[&_[data-orientation=horizontal]]:bg-[#00D4FF]/20 [&_[data-orientation=horizontal]_[role=slider]]:bg-[#00D4FF]"
                   />
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <Label className="text-sm font-bold text-white">Key</Label>
                   <Select value={musicalKey} onValueChange={setMusicalKey}>
                     <SelectTrigger className="bg-[#0a0a0a]/60 border-[#00D4FF]/20">
@@ -459,7 +284,7 @@ export default function AISampleGenerator() {
                   </Select>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <Label className="text-sm font-bold text-white">Scale</Label>
                   <Select value={scale} onValueChange={setScale}>
                     <SelectTrigger className="bg-[#0a0a0a]/60 border-[#00D4FF]/20">
@@ -476,10 +301,20 @@ export default function AISampleGenerator() {
                 </div>
               </div>
 
+              {/* Generation Info Badge */}
+              {isRefinementMode && selectedSampleId && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-[#00D4FF]/10 border border-[#00D4FF]/20">
+                  <Pin className="w-4 h-4 text-[#00D4FF]" />
+                  <span className="text-sm text-[#00D4FF]">
+                    Refining: Generation {selectedSampleId.split('-')[0]}, Sample {parseInt(selectedSampleId.split('-')[1]) + 1}
+                  </span>
+                </div>
+              )}
+
               {/* Generate Button */}
               <Button
                 className="w-full h-16 text-xl font-black bg-gradient-to-r from-[#00D4FF] via-[#0099CC] to-[#0066FF] hover:scale-[1.02] transition-transform shadow-xl shadow-[#00D4FF]/20"
-                onClick={generateSample}
+                onClick={generateSamples}
                 disabled={isGenerating}
               >
                 {isGenerating ? (
@@ -490,7 +325,7 @@ export default function AISampleGenerator() {
                 ) : (
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-6 h-6" />
-                    <span>GENERATE SAMPLE</span>
+                    <span>{isRefinementMode ? "REFINE SAMPLE" : "GENERATE 4 SAMPLES"}</span>
                   </div>
                 )}
               </Button>
@@ -500,78 +335,115 @@ export default function AISampleGenerator() {
               )}
             </CardContent>
           </Card>
+
+          {/* Instructions */}
+          <Card className="border-[#00D4FF]/20 bg-[#0a0a0a]/40 backdrop-blur-xl">
+            <CardHeader>
+              <CardTitle className="text-[#00D4FF] text-lg">How It Works</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm text-muted-foreground">
+              <p>1. <strong className="text-white">Describe</strong> the vocal you want</p>
+              <p>2. <strong className="text-white">Generate</strong> 4 variations at once</p>
+              <p>3. <strong className="text-white">Pin</strong> your favorite sample</p>
+              <p>4. <strong className="text-white">Refine</strong> with specific instructions</p>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Right Column: Output & Actions */}
+        {/* Right Column: Generated Samples */}
         <div className="space-y-8">
-          <Card className="border-[#00D4FF]/20 bg-[#0a0a0a]/40 backdrop-blur-xl shadow-2xl h-full flex flex-col">
+          <Card className="border-[#00D4FF]/20 bg-[#0a0a0a]/40 backdrop-blur-xl shadow-2xl">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-[#00D4FF]">
-                <Volume2 className="w-6 h-6" />
-                Output
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col space-y-6">
-              {/* Output Preview */}
-              <div className="flex-1 flex flex-col items-center justify-center">
-                <div className="w-32 h-32 rounded-full bg-[#00D4FF]/10 flex items-center justify-center border-4 border-[#00D4FF]/20 relative group overflow-hidden">
-                  <div className="absolute inset-0 bg-[#00D4FF]/20 animate-pulse" />
-                  <Music2 className="w-12 h-12 text-[#00D4FF] relative z-10" />
-                </div>
-
-                {!generatedAudioUrl ? (
-                  <div className="text-center space-y-2 mt-6">
-                    <p className="text-muted-foreground italic">Generate a sample to hear the result</p>
-                  </div>
-                ) : (
-                  <div className="w-full space-y-4 mt-6">
-                    <div className="p-4 rounded-xl bg-[#0a0a0a]/40 border border-[#00D4FF]/20">
-                      <audio src={generatedAudioUrl} controls className="w-full h-8" />
-                    </div>
-                    
-                    {/* Match Button */}
-                    <Button
-                      variant="outline"
-                      className="w-full gap-2 border-[#00D4FF]/20 hover:bg-[#00D4FF]/10 text-[#00D4FF]"
-                      onClick={matchToOriginal}
-                      disabled={isMatching}
-                    >
-                      {isMatching ? (
-                        <div className="flex items-center gap-2">
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                          <span>Matching...</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <ChevronRight className="w-4 h-4" />
-                          <span>Match to Original</span>
-                        </div>
-                      )}
-                    </Button>
-
-                    {/* Download Buttons */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <Button 
-                        variant="outline" 
-                        className="gap-2 border-[#00D4FF]/20 hover:bg-[#00D4FF]/10 text-[#00D4FF]"
-                        onClick={() => downloadFile(generatedAudioUrl!, 'generated-sample.wav')}
-                      >
-                        <Download className="w-4 h-4" /> 
-                        Audio
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="gap-2 border-[#00D4FF]/20 hover:bg-[#00D4FF]/10 text-[#00D4FF]"
-                        onClick={() => downloadFile(generatedMidiUrl!, 'generated-sample.mid')}
-                        disabled={!generatedMidiUrl}
-                      >
-                        <FileMusic className="w-4 h-4" /> 
-                        MIDI
-                      </Button>
-                    </div>
-                  </div>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-[#00D4FF]">
+                  <Volume2 className="w-6 h-6" />
+                  Generated Samples
+                </CardTitle>
+                {samples.length > 0 && (
+                  <Badge variant="outline" className="border-[#00D4FF]/20 text-[#00D4FF]">
+                    Gen #{samples[0]?.generationNumber || 1}
+                  </Badge>
                 )}
               </div>
+            </CardHeader>
+            <CardContent>
+              {samples.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <Music2 className="w-16 h-16 mb-4 opacity-20" />
+                  <p>Generate your first 4 vocal samples</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <AnimatePresence>
+                    {samples.map((sample, index) => (
+                      <motion.div
+                        key={sample.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ delay: index * 0.1 }}
+                        className={`p-4 rounded-xl border transition-all ${
+                          sample.isPinned 
+                            ? 'bg-[#00D4FF]/10 border-[#00D4FF]' 
+                            : 'bg-[#0a0a0a]/40 border-[#00D4FF]/20'
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          {/* Sample Number */}
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                            sample.isPinned ? 'bg-[#00D4FF] text-black' : 'bg-[#00D4FF]/20 text-[#00D4FF]'
+                          }`}>
+                            {index + 1}
+                          </div>
+
+                          {/* Audio Player */}
+                          <div className="flex-1">
+                            <audio
+                              ref={(el) => { audioRefs.current[sample.id] = el; }}
+                              src={sample.audioUrl}
+                              onEnded={() => setSamples(prev => prev.map(s => s.id === sample.id ? { ...s, isPlaying: false } : s))}
+                              className="w-full h-8"
+                              controls
+                            />
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className={`${sample.isPinned ? 'text-[#00D4FF]' : 'text-muted-foreground'}`}
+                              onClick={() => pinSample(sample.id)}
+                            >
+                              {sample.isPinned ? <Pin className="w-5 h-5" /> : <PinOff className="w-5 h-5" />}
+                            </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-[#00D4FF]"
+                              onClick={() => downloadSample(sample.audioUrl, sample.id)}
+                            >
+                              <Download className="w-5 h-5" />
+                            </Button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+
+                  {/* Refinement Button */}
+                  {selectedSampleId && !isRefinementMode && (
+                    <Button
+                      className="w-full mt-4 gap-2 bg-[#00D4FF]/20 border border-[#00D4FF] text-[#00D4FF] hover:bg-[#00D4FF]/30"
+                      onClick={startRefinement}
+                    >
+                      <Wand2 className="w-5 h-5" />
+                      Refine Pinned Sample
+                    </Button>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
